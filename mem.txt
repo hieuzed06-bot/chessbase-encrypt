@@ -1,0 +1,56 @@
+PROJECT MEMORY — CODE LOCKER
+Last updated: 2026-11-01
+Repository: https://github.com/hieuzed06-bot/chessbase-encrypt
+Default branch: main
+
+PURPOSE
+Code Locker is a browser-based tool that encrypts source code and disguises the encrypted bytes as chess-style PGN moves. It supports any programming language by converting source text to UTF-8 bytes before encryption. Users can export PGN text or a self-decrypting protected HTML file.
+
+CURRENT REPOSITORY STATE
+- Both security pull requests have been merged into main:
+  - PR #2: Harden Code Locker browser security.
+  - PR #3: Harden script loading and validate encrypted PGN input.
+- Do not assume there are unmerged changes from those PRs. Check GitHub for the latest state before making further changes.
+- Main application files:
+  - index.html — UI shell and restrictive meta Content-Security-Policy.
+  - app.js — application logic, browser cryptography, encryption/decryption, protected HTML generation.
+  - codec.js — chess-byte and PGN conversion plus input limits and validation.
+  - test/codec.test.js — automated codec tests.
+  - package.json — npm test script using Node's built-in test runner.
+  - .github/workflows/tests.yml — GitHub Actions workflow running npm test on pushes and pull requests.
+  - README.md — user documentation.
+  - SECURITY.md — vulnerability reporting and security guidance.
+
+SECURITY DESIGN
+- New encryption uses PBKDF2-SHA256 with 600,000 iterations and AES-256-GCM.
+- Decryption retains compatibility with legacy files created using 100,000 PBKDF2 iterations.
+- The main page loads app.js as a same-origin JavaScript module and uses script-src 'self'. Inline JavaScript event-handler attributes were removed.
+- Downloaded protected HTML uses a fresh cryptographically random CSP nonce for its embedded decryptor.
+- The main page CSP still permits inline styles via style-src 'unsafe-inline'; do not claim that all inline content has been eliminated.
+- Source input is limited to 1 MiB (UTF-8).
+- PGN input is limited to 8 MiB. The codec validates the cipher's exact move tokens and rejects malformed tokens and unsupported chess notation.
+- The chess notation is obfuscation only. Actual confidentiality comes from AES-GCM.
+- There is no password recovery. A strong password is essential.
+- Once someone has a copy of an encrypted file, the application cannot prevent offline password guessing; PBKDF2 only increases the cost of each attempt.
+- A protected HTML file is executable content. Users should open only files from trusted sources.
+- GitHub Pages cannot configure arbitrary HTTP response security headers from this repository; the meta CSP is defense-in-depth, not a replacement for server response headers.
+
+DEVELOPMENT AND TESTING
+- Run automated tests with: npm test
+- The test suite covers all 256 byte values, PGN round trips, move numbering and result markers, malformed input, and oversized PGN.
+- GitHub Actions uses Node.js 22.
+- Automated codec tests do not replace browser testing. After changes to encryption, decryption, CSP, or generated HTML, manually test:
+  1. Encrypt and decrypt newly created PGN.
+  2. Decrypt legacy PGN created with 100,000 PBKDF2 iterations.
+  3. Download and open a protected HTML file in a modern browser.
+  4. Check the browser console for CSP or JavaScript errors.
+- Preserve compatibility with existing encrypted PGN and protected HTML whenever possible.
+- Do not weaken cryptographic settings or CSP merely to make a test pass. Investigate the actual cause first.
+
+WORKING GUIDELINES FOR FUTURE CONTRIBUTORS / AI ASSISTANTS
+- Read the current files on main before editing; this memory file may become outdated.
+- Make focused changes, test them, and use a separate branch and pull request for substantial work.
+- Never commit passwords, API keys, private user code, or other secrets.
+- Update README.md and SECURITY.md when behavior or security assumptions change.
+- Report honestly which tests were run and which browser checks remain unverified.
+- Do not claim a deployment succeeded unless the deployment provider confirms it.
