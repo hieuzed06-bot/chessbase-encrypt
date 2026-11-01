@@ -98,9 +98,16 @@ function m2b(m){
   return(pi<<6)|(fi<<3)|ri;
 }
 function parse(pgn){
-  const body=pgn.split('\\n').filter(l=>!l.trim().startsWith('[')).join(' ');
-  const tok=body.split(/\\s+/).filter(t=>t&&!/^\\d+\\.$/.test(t)&&t!=='*');
-  return new Uint8Array(tok.map(m2b));
+  if(new TextEncoder().encode(pgn).length>2*1024*1024) throw new Error('PGN exceeds the 2 MiB limit.');
+  const body=pgn.split('\\n').filter(l=>!/^\\s*\\[[A-Za-z][A-Za-z0-9_]*\\s+\"[^\"\\r\\n]*\"\\]\\s*$/.test(l)).join(' ');
+  const tokens=body.trim().split(/\\s+/).filter(Boolean), bytes=[];
+  for(const token of tokens){
+    if(/^\\d+\\.(?:\\.\\.)?$/.test(token)||['*','1-0','0-1','1/2-1/2'].includes(token)) continue;
+    if(!/^(?:[NBR])?[a-h][1-8]$/.test(token)) throw new Error('Invalid chess-cipher token.');
+    bytes.push(m2b(token));
+  }
+  if(!bytes.length) throw new Error('No encrypted moves found.');
+  return new Uint8Array(bytes);
 }
 async function dec(){
   const pw=document.getElementById('pw').value;
