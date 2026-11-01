@@ -140,6 +140,6 @@ Every byte → move pair in one table; amber frames mark the worked examples abo
 ## Input limits and validation
 
 - Source code is limited to 1 MiB (UTF-8).
-- PGN input is limited to 2 MiB and accepts only the chess-cipher move format, PGN move numbers, headers, and result markers. SAN moves, comments, variations, and malformed tokens are rejected.
+- PGN input is limited to 8 MiB and accepts only the chess-cipher move format, PGN move numbers, headers, and result markers. SAN moves, comments, variations, and malformed tokens are rejected.
 - Run `npm test` locally; GitHub Actions runs the same codec test suite for pushes and pull requests.
 - The main app loads JavaScript from `app.js` under a `script-src 'self'` policy. Downloaded protected pages use a fresh per-page CSP nonce for their embedded decryptor.
