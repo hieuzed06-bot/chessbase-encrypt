@@ -18,7 +18,7 @@
 
 ## 🔐 How to Encrypt (Protect tab)
 
-![Encryption pipeline](images/encryption-flow.png)
+![Encryption pipeline](https://raw.githubusercontent.com/hieuzed06-bot/script/main/image/encryption-flow.png)
 
 1. **Open `Code Locker — Chess Cipher v2.html`** in any modern browser. Stay on the **🔒 Protect code** tab.
 2. **Paste your source code** into the *Source code* box — the counter shows lines and size.
@@ -36,11 +36,11 @@ Every encryption uses a **fresh random salt + IV**, so encrypting the same code 
 
 Every byte (0–255) maps to a chess move via 4 piece groups × 8 files × 8 ranks = **256 slots**. The two high bits pick the *piece board*, three middle bits pick the *file*, three low bits pick the *rank*:
 
-![Four chess boards showing byte ranges](images/chess-board-mapping.png)
+![Four chess boards showing byte ranges](https://raw.githubusercontent.com/hieuzed06-bot/script/main/image/chess-board-mapping.png)
 
 ### Byte anatomy — one worked example
 
-![Byte 0xC3 breaks into piece, file, rank](images/byte-anatomy.png)
+![Byte 0xC3 breaks into piece, file, rank](https://raw.githubusercontent.com/hieuzed06-bot/script/main/image/byte-anatomy.png)
 
 ### Key samples of the mapping
 
@@ -127,7 +127,7 @@ console.log("PGN was hiding AES-256-GCM all along.");
 
 Every byte → move pair in one table; amber frames mark the worked examples above.
 
-![Full byte to move map, 256 entries](images/full-mapping.png)
+![Full byte to move map, 256 entries](https://raw.githubusercontent.com/hieuzed06-bot/script/main/image/full-mapping.png)
 
 ---
 
