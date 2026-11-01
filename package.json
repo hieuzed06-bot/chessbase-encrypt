@@ -1,0 +1,8 @@
+{
+  "name": "chessbase-encrypt",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}
