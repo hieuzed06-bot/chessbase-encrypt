@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>🔐 Code Locker</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -101,7 +103,7 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
     <p>Encrypt source code with AES-256-GCM, encoded as chess game notation. Generate a shareable self-decrypting HTML page — recipient opens the file, enters password, and sees the code.</p>
     <div class="chips">
       <span class="chip">AES-256-GCM</span>
-      <span class="chip">PBKDF2-SHA256 · 100k iter</span>
+      <span class="chip">PBKDF2-SHA256 · 600k iter</span>
       <span class="chip">Random nonce per encryption</span>
       <span class="chip">Self-decrypting page output</span>
       <span class="chip">Any language ✓</span>
@@ -196,7 +198,7 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
   <div class="info">
     <h3>How it works</h3>
     <div class="flow">
-      <div class="flow-item"><div class="flow-n">1</div><div><strong>PBKDF2-SHA256</strong> — password + random 16-byte salt, 100,000 iterations → 256-bit AES key</div></div>
+      <div class="flow-item"><div class="flow-n">1</div><div><strong>PBKDF2-SHA256</strong> — password + random 16-byte salt, 600,000 iterations for new files → 256-bit AES key</div></div>
       <div class="flow-item"><div class="flow-n">2</div><div><strong>AES-256-GCM</strong> — 12-byte random IV, produces ciphertext + 16-byte auth tag (tamper detection)</div></div>
       <div class="flow-item"><div class="flow-n">3</div><div><strong>Chess encoding</strong> — <code>salt(16) + IV(12) + ct+tag</code> → every byte becomes a chess move (∅/N/B/R × a–h × 1–8 = 256)</div></div>
       <div class="flow-item"><div class="flow-n">4</div><div><strong>PGN output</strong> — looks like a real game record; optionally bundled into a self-decrypting HTML page</div></div>
@@ -242,10 +244,10 @@ function fromPGN(pgn){
 // ── Crypto ─────────────────────────────────────────────
 const TE=new TextEncoder(), TD=new TextDecoder();
 
-async function deriveKey(pw, salt, usage){
+async function deriveKey(pw, salt, usage, iterations=600000){
   const base=await crypto.subtle.importKey('raw',TE.encode(pw),'PBKDF2',false,['deriveKey']);
   return crypto.subtle.deriveKey(
-    {name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},
+    {name:'PBKDF2',salt,iterations,hash:'SHA-256'},
     base,{name:'AES-GCM',length:256},false,[usage]
   );
 }
@@ -263,11 +265,15 @@ async function encryptBytes(text, pw){
 
 async function decryptBytes(buf, pw){
   if(buf.length<45) throw new Error('Data too short — corrupted or invalid PGN.');
-  const key=await deriveKey(pw,buf.slice(0,16),'decrypt');
-  try{
-    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(16,28)},key,buf.slice(28));
-    return TD.decode(pt);
-  }catch{ throw new Error('Decryption failed — wrong password or data was tampered with.'); }
+  // Try the current work factor first, then retain compatibility with older 100k files.
+  for(const iterations of [600000,100000]){
+    try{
+      const key=await deriveKey(pw,buf.slice(0,16),'decrypt',iterations);
+      const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(16,28)},key,buf.slice(28));
+      return TD.decode(pt);
+    }catch{}
+  }
+  throw new Error('Decryption failed — wrong password or data was tampered with.');
 }
 
 // ── Self-decrypt page template ─────────────────────────
@@ -278,6 +284,8 @@ function buildProtectedPage(pgn){
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
 <title>🔐 Protected Code</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -344,8 +352,15 @@ async function dec(){
     const salt=buf.slice(0,16),iv=buf.slice(16,28),ct=buf.slice(28);
     if(!pw){err.textContent='Password is required.';btn.disabled=false;btn.innerHTML='🔓 Unlock';return;}
     const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
-    const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+    let pt=null;
+    for(const iterations of [600000,100000]){
+      try{
+        const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+        pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
+        break;
+      }catch{}
+    }
+    if(!pt) throw new Error('Decryption failed');
     const code=new TextDecoder().decode(pt);
     document.getElementById('code').textContent=code;
     document.getElementById('out').style.display='block';

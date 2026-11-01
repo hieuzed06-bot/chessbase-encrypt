@@ -6,7 +6,7 @@
 
 ## ✨ What It Does
 
-`Code Locker` disguises encrypted source code as a **real-looking chess game record**. Behind the board: **AES-256-GCM** + **PBKDF2-SHA256 (100,000 iterations)**. The output is either a PGN text or a self-contained HTML page — recipients just open it, enter the password, and the code is revealed.
+`Code Locker` disguises encrypted source code as a **real-looking chess game record**. Behind the board: **AES-256-GCM** + **PBKDF2-SHA256 (600,000 iterations for new encryptions; legacy 100,000-iteration files remain decryptable)**. The output is either a PGN text or a self-contained HTML page — recipients just open it, enter the password, and the code is revealed.
 
 | | |
 |---|---|
@@ -115,10 +115,13 @@ console.log("PGN was hiding AES-256-GCM all along.");
 ## 🛡️ Security Notes
 
 - ✅ AES-256-GCM (authenticated encryption — tamper detection)
-- ✅ PBKDF2-SHA256, 100,000 iterations (brute-force resistant)
+- ✅ PBKDF2-SHA256, 600,000 iterations for new encryptions; old 100,000-iteration files are still supported
 - ✅ Random 16-byte salt + 12-byte IV per encryption (never reused)
 - ⚠️ **No password recovery** — if lost, data is gone
-- ⚠️ Keep the HTML file and the password on **separate channels** when sharing
+- ⚠️ Use a unique, long password (ideally 16+ characters) and share it over a **separate channel** from the HTML/PGN
+- ⚠️ Chess notation is only an encoding/obfuscation layer; the cryptographic protection comes from AES-GCM
+- ⚠️ Treat downloaded protected HTML as executable content; open it only if you trust its source
+- ℹ️ The page uses a restrictive meta CSP, but GitHub Pages does not let this repository set HTTP response security headers
 - ℹ️ The cipher *disguises* traffic as chess moves — it does not hide *metadata* (message size ≈ game length)
 
 ---
