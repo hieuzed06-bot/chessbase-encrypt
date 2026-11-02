@@ -1,6 +1,6 @@
 export const MAX_SOURCE_BYTES = 1024 * 1024;
 export const MAX_PGN_BYTES = 8 * 1024 * 1024;
-const MAX_ENCRYPTED_BYTES = MAX_SOURCE_BYTES + 44;
+const MAX_ENCRYPTED_BYTES = 2 * 1024 * 1024 + 32 + 16;
 const PIECES = ['', 'N', 'B', 'R'], FILES = 'abcdefgh', RANKS = '12345678';
 export function byteToMove(b) { if (!Number.isInteger(b) || b < 0 || b > 255) throw new Error('Invalid byte.'); return PIECES[b >> 6] + FILES[(b >> 3) & 7] + RANKS[b & 7]; }
 export function moveToByte(m) { if (typeof m !== 'string' || !/^(?:[NBR])?[a-h][1-8]$/.test(m)) throw new Error('Invalid chess-cipher move: ' + String(m)); const p=m.length===3?PIECES.indexOf(m[0]):0, f=FILES.indexOf(m[m.length-2]), r=RANKS.indexOf(m[m.length-1]); if(p<0||f<0||r<0) throw new Error('Invalid move.'); return (p<<6)|(f<<3)|r; }

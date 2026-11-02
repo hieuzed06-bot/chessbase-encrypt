@@ -97,13 +97,16 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
     <div class="hdr-top">
       <span style="font-size:28px">🔐</span>
       <div>
-        <h1>Code Locker <span class="badge bg-green">v2</span> <span class="badge bg-gray">Chess Cipher</span></h1>
+        <h1>Code Locker <span class="badge bg-green">v3</span> <span class="badge bg-gray">Chess Cipher</span></h1>
       </div>
     </div>
     <p>Encrypt source code with AES-256-GCM, encoded as chess game notation. Generate a shareable self-decrypting HTML page — recipient opens the file, enters password, and sees the code.</p>
     <div class="chips">
       <span class="chip">AES-256-GCM</span>
-      <span class="chip">PBKDF2-SHA256 · 600k iter</span>
+      <span class="chip">PBKDF2-SHA256 · 1M iter</span>
+      <span class="chip">HKDF key separation</span>
+      <span class="chip">Random length padding</span>
+      <span class="chip">Legacy v2 compatible</span>
       <span class="chip">Random nonce per encryption</span>
       <span class="chip">Self-decrypting page output</span>
       <span class="chip">Any language ✓</span>
@@ -198,10 +201,12 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
   <div class="info">
     <h3>How it works</h3>
     <div class="flow">
-      <div class="flow-item"><div class="flow-n">1</div><div><strong>PBKDF2-SHA256</strong> — password + random 16-byte salt, 600,000 iterations for new files → 256-bit AES key</div></div>
-      <div class="flow-item"><div class="flow-n">2</div><div><strong>AES-256-GCM</strong> — 12-byte random IV, produces ciphertext + 16-byte auth tag (tamper detection)</div></div>
-      <div class="flow-item"><div class="flow-n">3</div><div><strong>Chess encoding</strong> — <code>salt(16) + IV(12) + ct+tag</code> → every byte becomes a chess move (∅/N/B/R × a–h × 1–8 = 256)</div></div>
-      <div class="flow-item"><div class="flow-n">4</div><div><strong>PGN output</strong> — looks like a real game record; optionally bundled into a self-decrypting HTML page</div></div>
+      <div class="flow-item"><div class="flow-n">1</div><div><strong>PBKDF2-SHA256 · 1,000,000 iterations</strong> — password + fresh 16-byte salt derives a 256-bit master key. Existing v2 files remain supported.</div></div>
+      <div class="flow-item"><div class="flow-n">2</div><div><strong>HKDF-SHA256</strong> — derives a dedicated AES key from the PBKDF2 master key using a domain-separated context.</div></div>
+      <div class="flow-item"><div class="flow-n">3</div><div><strong>AES-256-GCM</strong> — fresh 12-byte nonce, 128-bit authentication tag and version-bound AAD.</div></div>
+      <div class="flow-item"><div class="flow-n">4</div><div><strong>Random length padding</strong> — plaintext is length-prefixed and padded to a power-of-two bucket before encryption.</div></div>
+      <div class="flow-item"><div class="flow-n">5</div><div><strong>Chess encoding</strong> — versioned envelope bytes become cipher moves; notation is encoding, not extra cryptographic strength.</div></div>
+      <div class="flow-item"><div class="flow-n">6</div><div><strong>PGN output</strong> — export a PGN or a self-decrypting HTML page; old v2 and legacy files remain decryptable.</div></div>
     </div>
   </div>
 

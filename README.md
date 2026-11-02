@@ -1,4 +1,4 @@
-# 🔐 Code Locker — Chess Cipher v2
+# 🔐 Code Locker — Chess Cipher v3
 
 > **Creative Chess Notation Encryption** — turn any source code into a PGN chess game record that still decrypts with AES-256-GCM.
 
@@ -6,7 +6,7 @@
 
 ## ✨ What It Does
 
-`Code Locker` disguises encrypted source code as a **real-looking chess game record**. Behind the board: **AES-256-GCM** + **PBKDF2-SHA256 (600,000 iterations for new encryptions; legacy 100,000-iteration files remain decryptable)**. The output is either a PGN text or a self-contained HTML page — recipients just open it, enter the password, and the code is revealed.
+`Code Locker` disguises encrypted source code as a **real-looking chess game record**. Behind the board: **AES-256-GCM** + **PBKDF2-SHA256 (1,000,000 iterations)** + **HKDF-SHA256 key derivation**. New v3 files use random length padding and authenticated version metadata. Existing v2 and legacy files remain decryptable. The output is either a PGN text or a self-contained HTML page — recipients just open it, enter the password, and the code is revealed.
 
 | | |
 |---|---|
@@ -16,14 +16,14 @@
 
 ---
 
-## 🔐 How to Encrypt (Protect tab)
+## 🔐 How to Encrypt (Protect tab — CCX v3)
 
 ![Encryption pipeline](https://github.com/hieuzed06-bot/script/blob/main/image/encryption-flow.png)
 
 1. **Open `Code Locker — Chess Cipher v2.html`** in any modern browser. Stay on the **🔒 Protect code** tab.
 2. **Paste your source code** into the *Source code* box — the counter shows lines and size.
 3. **Type a strong password.** ⚠️ There is **no password recovery** — lose it and the data is gone.
-4. **Click `🔐 Encrypt`.** The tool runs PBKDF2 → AES-256-GCM → chess encoding and shows the **PGN output**.
+4. **Click `🔐 Encrypt`.** The tool runs PBKDF2 → HKDF → AES-256-GCM → random padding → chess encoding and shows the **PGN output**.
 5. **Share it** two ways:
    - **Copy** the PGN text and paste it anywhere (chat, email, README…), or
    - **Download protected page** — a single `protected-code.html` that decrypts itself in the recipient's browser.
@@ -63,7 +63,7 @@ You received a `protected-code.html` file or a PGN snippet. Here's how to unlock
 
 1. **Open the file** — double-click `protected-code.html`. It opens in any modern browser (Chrome, Firefox, Safari, Edge). No internet needed. *Or* open the tool's **🔓 Unlock** tab and paste the PGN.
 2. **Enter the password** — the one the sender shared with you privately. There is no fallback key: an empty password is refused.
-3. **Click `🔓 Unlock`.** PBKDF2 derives the AES key, GCM verifies the auth tag.
+3. **Click `🔓 Unlock`.** The versioned decryptor derives the key, verifies the GCM authentication tag, and removes random padding. Older v2 files are still supported.
 4. **See the code** — it appears in the panel. Hit **Copy code** to grab it.
 
 > ⚠️ Wrong password → `Decryption failed — wrong password or data was tampered with.` The GCM auth tag catches both.
@@ -114,12 +114,16 @@ console.log("PGN was hiding AES-256-GCM all along.");
 
 ## 🛡️ Security Notes
 
-- ✅ AES-256-GCM (authenticated encryption — tamper detection)
-- ✅ PBKDF2-SHA256, 600,000 iterations for new encryptions; old 100,000-iteration files are still supported
-- ✅ Random 16-byte salt + 12-byte IV per encryption (never reused)
+- ✅ AES-256-GCM with a 128-bit authentication tag and version-bound Additional Authenticated Data (AAD)
+- ✅ PBKDF2-SHA256 with 1,000,000 iterations for new CCX v3 files
+- ✅ HKDF-SHA256 derives a dedicated encryption key with a domain-separated context
+- ✅ Fresh random 16-byte salt and 12-byte nonce per encryption
+- ✅ Random padding hides the exact plaintext length within a power-of-two size bucket
+- ✅ Backward-compatible decryption for v2 (600,000 iterations) and legacy (100,000 iterations) files
 - ⚠️ **No password recovery** — if lost, data is gone
 - ⚠️ Use a unique, long password (ideally 16+ characters) and share it over a **separate channel** from the HTML/PGN
 - ⚠️ Chess notation is only an encoding/obfuscation layer; the cryptographic protection comes from AES-GCM
+- ⚠️ PBKDF2 is not memory-hard like Argon2id. This browser-only build uses native Web Crypto so it can work offline without loading third-party code. A future Argon2id migration should bundle and audit a maintained implementation, not fetch executable crypto code from a CDN.
 - ⚠️ Treat downloaded protected HTML as executable content; open it only if you trust its source
 - ℹ️ The page uses a restrictive meta CSP, but GitHub Pages does not let this repository set HTTP response security headers
 - ℹ️ The cipher *disguises* traffic as chess moves — it does not hide *metadata* (message size ≈ game length)
@@ -136,6 +140,10 @@ Every byte → move pair in one table; amber frames mark the worked examples abo
 
 *Made with ♟️ — keep your code on the board, but off the record.*
 
+
+## CCX v3 envelope
+
+New encrypted byte streams begin with the `CCX3` magic marker, followed by a 16-byte salt, 12-byte nonce, and AES-GCM ciphertext plus its 16-byte tag. A fixed canonical AAD string binds the format version, KDF, work factor, cipher, and codec identifier. The decrypted payload starts with a 4-byte big-endian plaintext length and is padded with random bytes to the next power-of-two bucket (minimum 256 bytes). The chess move alphabet remains a reversible byte encoding and does not add cryptographic strength.
 
 ## Input limits and validation
 

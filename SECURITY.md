@@ -8,10 +8,13 @@ Include the affected file or feature, reproduction steps, impact, and any sugges
 
 ## Cryptographic design
 
-- New encryptions use Web Crypto AES-256-GCM with a fresh random 16-byte salt and 12-byte IV.
-- The AES key is derived with PBKDF2-HMAC-SHA-256 using 600,000 iterations.
-- The decryptor also supports older files made with 100,000 PBKDF2 iterations.
-- AES-GCM authentication detects modified ciphertext. The chess-move representation is only an encoding layer; it is not additional cryptographic protection.
+- New CCX v3 encryptions use Web Crypto AES-256-GCM with a fresh random 16-byte salt and 12-byte nonce, plus a 128-bit authentication tag.
+- Passwords are processed with PBKDF2-HMAC-SHA-256 at 1,000,000 iterations. HKDF-SHA-256 derives the dedicated AES key with a domain-separated context.
+- A fixed canonical Additional Authenticated Data (AAD) value binds the format version, KDF, work factor, cipher and codec identifier. Altered or mismatched metadata causes authentication failure.
+- Plaintext is length-prefixed and padded with random bytes to the next power-of-two bucket (minimum 256 bytes), reducing exact-length leakage but not hiding the bucket or total PGN size.
+- The versioned CCX v3 envelope begins with the `CCX3` marker, then salt, nonce and ciphertext+tag. The chess notation remains a reversible encoding layer, not cryptographic protection.
+- Decryption remains compatible with v2 files (PBKDF2-SHA-256, 600,000 iterations) and legacy files (100,000 iterations).
+- PBKDF2 is not memory-hard like Argon2id. This implementation intentionally uses browser-native Web Crypto to remain self-contained and offline-capable; do not claim Argon2id protection. A future Argon2id migration should bundle and audit a maintained implementation.
 
 ## Safe use
 

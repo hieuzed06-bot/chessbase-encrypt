@@ -1,155 +1,76 @@
 import { toPGN, fromPGN, MAX_SOURCE_BYTES, MAX_PGN_BYTES } from './codec.js';
-
-// ── Crypto ─────────────────────────────────────────────
-const TE=new TextEncoder(), TD=new TextDecoder();
-
-async function deriveKey(pw, salt, usage, iterations=600000){
-  const base=await crypto.subtle.importKey('raw',TE.encode(pw),'PBKDF2',false,['deriveKey']);
-  return crypto.subtle.deriveKey(
-    {name:'PBKDF2',salt,iterations,hash:'SHA-256'},
-    base,{name:'AES-GCM',length:256},false,[usage]
-  );
-}
-
-async function encryptBytes(text, pw){
-  const pt=TE.encode(text);
-  const salt=crypto.getRandomValues(new Uint8Array(16));
-  const iv=crypto.getRandomValues(new Uint8Array(12));
-  const key=await deriveKey(pw,salt,'encrypt');
-  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,pt));
-  const buf=new Uint8Array(28+ct.byteLength);
-  buf.set(salt,0); buf.set(iv,16); buf.set(ct,28);
-  return buf;
-}
-
-async function decryptBytes(buf, pw){
-  if(buf.length<45) throw new Error('Data too short — corrupted or invalid PGN.');
-  // Try the current work factor first, then retain compatibility with older 100k files.
-  for(const iterations of [600000,100000]){
-    try{
-      const key=await deriveKey(pw,buf.slice(0,16),'decrypt',iterations);
-      const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(16,28)},key,buf.slice(28));
-      return TD.decode(pt);
-    }catch{}
-  }
-  throw new Error('Decryption failed — wrong password or data was tampered with.');
-}
+import { encryptBytes, decryptBytes } from './crypto-v3.js';
 
 // ── Self-decrypt page template ─────────────────────────
 function buildProtectedPage(pgn){
   const nonceBytes=crypto.getRandomValues(new Uint8Array(16));
   const nonce=btoa(String.fromCharCode(...nonceBytes));
-  const esc=pgn.replace(/\\/g,'\\\\').replace(/`/g,'\\`');
+  // Cipher PGN alphabet cannot contain a backtick, so it is safe in this template literal.
   return`<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="referrer" content="no-referrer">
-<title>🔐 Protected Code</title>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer"><title>Protected Code — Chess Cipher</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--text:#e6edf3;--text2:#8b949e;--border:#30363d;--green:#769656;--green2:#5a7a3a;--danger:#f85149;--mono:'Courier New',monospace;--r:8px}
-body{font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem 1rem}
-.card{width:100%;max-width:640px}
-h1{font-size:20px;font-weight:700;margin-bottom:6px}
-p{font-size:13px;color:var(--text2);margin-bottom:1.5rem;line-height:1.5}
-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2);display:block;margin-bottom:5px}
-input{width:100%;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px;outline:none;margin-bottom:10px}
-input:focus{border-color:#444c56}
-input:disabled{opacity:.5}
-button{width:100%;padding:10px;border-radius:var(--r);background:var(--green);color:#fff;border:none;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
-button:hover:not(:disabled){background:var(--green2)}
-button:disabled{opacity:.5;cursor:not-allowed}
-.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.err{color:var(--danger);font-size:12px;margin-top:8px;min-height:16px}
-.out{margin-top:1.5rem;display:none}
-pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;overflow:auto;font-family:var(--mono);font-size:12.5px;line-height:1.65;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:65vh}
-.meta{font-size:11px;color:var(--text2);margin-top:8px}
-.copy-btn{width:auto;padding:6px 14px;font-size:12px;margin-top:8px;background:transparent;border:1px solid var(--border);color:var(--text2)}
-.copy-btn:hover{border-color:var(--green);color:var(--green);background:transparent}
-</style>
-</head>
-<body>
-<div class="card">
-  <h1>🔐 Protected Code</h1>
-  <p>Encrypted with AES-256-GCM + Chess Cipher. Enter the password to reveal the source code.</p>
-  <label>Password</label>
-  <input type="password" id="pw" placeholder="Enter password..." >
-  <button id="btn" >🔓 Unlock</button>
-  <div class="err" id="err"></div>
-  <div class="out" id="out">
-    <label>Source code</label>
-    <pre id="code"></pre>
-    <button class="copy-btn" >Copy code</button>
-    <div class="meta" id="meta"></div>
-  </div>
-</div>
-<script nonce="${nonce}">
-const PGN=\`${esc}\`;
+*{box-sizing:border-box}body{margin:0;padding:28px 14px;background:#0d1117;color:#e6edf3;font:14px system-ui;display:grid;place-items:center;min-height:100vh}.card{width:100%;max-width:680px}h1{font-size:21px}p,.meta{color:#8b949e;font-size:12px;line-height:1.5}input,button,pre{width:100%;box-sizing:border-box;border-radius:8px;padding:11px;margin:6px 0;background:#161b22;color:#e6edf3;border:1px solid #30363d}button{background:#769656;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.5}pre{white-space:pre-wrap;overflow:auto;max-height:65vh}#out{display:none}.err{color:#f85149;min-height:18px}
+</style></head><body><main class="card"><h1>🔐 Protected Code</h1><p>CCX v3 · PBKDF2-SHA256 · HKDF · AES-256-GCM · Chess notation</p>
+<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" placeholder="Enter password">
+<button id="btn">🔓 Unlock</button><div id="err" class="err"></div><section id="out"><p>Decrypted source code</p><pre id="code"></pre><button id="copy">Copy code</button><div id="meta" class="meta"></div></section></main>
+<script nonce="\${nonce}">
+'use strict';
+const PGN=\`${pgn}\`;
+const enc=new TextEncoder(), dec=new TextDecoder('utf-8',{fatal:true});
+const AAD=enc.encode('CodeLocker|CCX|3|PBKDF2-SHA256|1000000|AES-256-GCM|MOVE-CODEC-1');
 const P=['','N','B','R'],F='abcdefgh',R='12345678';
-function m2b(m){
-  m=m.trim();let pi,fi,ri;
-  if(m.length===3&&'NBR'.includes(m[0])){pi=P.indexOf(m[0]);fi=F.indexOf(m[1]);ri=R.indexOf(m[2]);}
-  else if(m.length===2){pi=0;fi=F.indexOf(m[0]);ri=R.indexOf(m[1]);}
-  else throw 0;
-  return(pi<<6)|(fi<<3)|ri;
-}
 function parse(pgn){
-  if(new TextEncoder().encode(pgn).length>8*1024*1024) throw new Error('PGN exceeds the 8 MiB limit.');
-  const body=pgn.split('\\n').filter(l=>!/^\\s*\\[[A-Za-z][A-Za-z0-9_]*\\s+\"[^\"\\r\\n]*\"\\]\\s*$/.test(l)).join(' ');
-  const tokens=body.trim().split(/\\s+/).filter(Boolean), bytes=[];
-  for(const token of tokens){
-    if(/^\\d+\\.(?:\\.\\.)?$/.test(token)||['*','1-0','0-1','1/2-1/2'].includes(token)) continue;
-    if(!/^(?:[NBR])?[a-h][1-8]$/.test(token)) throw new Error('Invalid chess-cipher token.');
-    bytes.push(m2b(token));
-    if(bytes.length>1024*1024+44) throw new Error('Too many encrypted moves.');
-  }
-  if(!bytes.length) throw new Error('No encrypted moves found.');
-  return new Uint8Array(bytes);
+ if(enc.encode(pgn).length>8*1024*1024)throw Error('PGN exceeds 8 MiB.');
+ const body=pgn.split(/\\r?\\n/).filter(l=>!/^\\s*\\[[A-Za-z][A-Za-z0-9_]*\\s+"[^"\\r\\n]*"\\]\\s*$/.test(l)).join(' ');
+ const tokens=body.trim().split(/\\s+/).filter(Boolean),out=[];
+ for(const t of tokens){if(/^\\d+\\.(?:\\.\\.)?$/.test(t)||['*','1-0','0-1','1/2-1/2'].includes(t))continue;
+  if(!/^(?:[NBR])?[a-h][1-8]$/.test(t))throw Error('Invalid chess-cipher token.');
+  const p=t.length===3?P.indexOf(t[0]):0, f=F.indexOf(t[t.length-2]), r=R.indexOf(t[t.length-1]);
+  if(p<0||f<0||r<0)throw Error('Invalid move token.');out.push((p<<6)|(f<<3)|r);
+  if(out.length>2*1024*1024+48)throw Error('Too many encrypted moves.');
+ }
+ if(!out.length)throw Error('No encrypted moves found.');
+ return new Uint8Array(out);
 }
-async function dec(){
-  const pw=document.getElementById('pw').value;
-  const btn=document.getElementById('btn');
-  const err=document.getElementById('err');
-  err.textContent='';btn.disabled=true;
-  btn.innerHTML='<div class="spin"></div><span>Decrypting…</span>';
-  try{
-    const buf=parse(PGN);
-    const salt=buf.slice(0,16),iv=buf.slice(16,28),ct=buf.slice(28);
-    if(!pw){err.textContent='Password is required.';btn.disabled=false;btn.innerHTML='🔓 Unlock';return;}
-    const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);
-    let pt=null;
-    for(const iterations of [600000,100000]){
-      try{
-        const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
-        pt=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);
-        break;
-      }catch{}
-    }
-    if(!pt) throw new Error('Decryption failed');
-    const code=new TextDecoder().decode(pt);
-    document.getElementById('code').textContent=code;
-    document.getElementById('out').style.display='block';
-    document.getElementById('meta').textContent=code.split('\\n').length+' lines · '+code.length+' chars';
-    btn.innerHTML='✓ Unlocked';
-    document.getElementById('pw').disabled=true;
-  }catch(e){
-    err.textContent='Wrong password or data has been tampered with.';
-    btn.disabled=false;btn.innerHTML='🔓 Unlock';
-  }
+async function deriveV3(password,salt){
+ const base=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
+ const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:1000000,hash:'SHA-256'},base,256);
+ const hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt,info:enc.encode('CCX v3 AES-256-GCM')},hk,{name:'AES-GCM',length:256},false,['decrypt']);
 }
-function copyCode(){
-  navigator.clipboard.writeText(document.getElementById('code').textContent);
+async function decrypt(bytes,password){
+ const isV3=bytes.length>=4&&bytes[0]===67&&bytes[1]===67&&bytes[2]===88&&bytes[3]===51;
+ if(isV3){
+  if(bytes.length<304)throw Error('CCX v3 data is truncated.');
+  const key=await deriveV3(password,bytes.subarray(4,20));
+  const packed=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(20,32),additionalData:AAD,tagLength:128},key,bytes.subarray(32)));
+  if(packed.length<256||packed.length>2*1024*1024||(packed.length&(packed.length-1))!==0)throw Error('Invalid padded payload.');
+  const n=new DataView(packed.buffer,packed.byteOffset,packed.byteLength).getUint32(0,false);
+  if(n>1024*1024||n>packed.length-4)throw Error('Invalid plaintext length.');
+  return dec.decode(packed.subarray(4,4+n));
+ }
+ if(bytes.length<45)throw Error('Legacy data is truncated.');
+ for(const iterations of [600000,100000]){
+  try{const base=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
+   const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:bytes.subarray(0,16),iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
+   return dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(16,28)},key,bytes.subarray(28)));
+  }catch{}
+ }
+ throw Error('Wrong password or damaged data.');
 }
-document.getElementById('btn').addEventListener('click',dec);
-document.getElementById('pw').addEventListener('keydown',event=>{if(event.key==='Enter')dec();});
-document.getElementById('copy-btn').addEventListener('click',copyCode);
-<\/script>
-</body>
-</html>`;
+async function unlock(){
+ const btn=document.getElementById('btn'),err=document.getElementById('err'),pw=document.getElementById('pw').value;
+ err.textContent='';if(!pw){err.textContent='Password is required.';return;}
+ btn.disabled=true;btn.textContent='Decrypting…';
+ try{const code=await decrypt(parse(PGN),pw);document.getElementById('code').textContent=code;document.getElementById('out').style.display='block';document.getElementById('meta').textContent=code.split('\\n').length+' lines · '+code.length+' characters';btn.textContent='✓ Unlocked';}
+ catch(e){err.textContent='Wrong password, corrupted data, or unsupported file.';btn.disabled=false;btn.textContent='🔓 Unlock';}
+}
+document.getElementById('btn').addEventListener('click',unlock);
+document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
+document.getElementById('copy').addEventListener('click',()=>navigator.clipboard.writeText(document.getElementById('code').textContent));
+<\/script></body></html>`;
 }
 
 // ── UI state ────────────────────────────────────────────
