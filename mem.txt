@@ -1,5 +1,5 @@
 PROJECT MEMORY — CODE LOCKER
-Last updated: 2026-11-01
+Last updated: 2026-11-02
 Repository: https://github.com/hieuzed06-bot/chessbase-encrypt
 Default branch: main
 
@@ -54,3 +54,14 @@ WORKING GUIDELINES FOR FUTURE CONTRIBUTORS / AI ASSISTANTS
 - Update README.md and SECURITY.md when behavior or security assumptions change.
 - Report honestly which tests were run and which browser checks remain unverified.
 - Do not claim a deployment succeeded unless the deployment provider confirms it.
+
+
+WEBSITE UI SIMPLICITY — IMPORTANT, MUST FOLLOW
+- Keep the website interface minimal, clean, and focused on the actual workflow: Protect code, Unlock, source/PGN input, password, result, copy, download, and clear actions.
+- Do NOT add decorative statistic chips, feature badges, algorithm/version pills, specification cards, metric cards, or repeated technical summaries to the website.
+- Do NOT add a large "How it works" / cryptographic specification panel to the main page unless the user explicitly asks for it.
+- Do not display internal implementation details (AES rounds, KDF iteration counts, nonce sizes, padding details, compatibility labels) as decorative UI badges or cards.
+- Put technical explanations in README.md or SECURITY.md instead of cluttering index.html.
+- Before adding any new UI section, verify that it directly helps users complete Protect/Unlock. If not, leave it out.
+- When asked to clean up the website, remove redundant visual elements while preserving functional controls and accessibility labels. Do not redesign unrelated areas or remove working features.
+- These are persistent project requirements. Every AI assistant or contributor must read and obey this section before editing index.html. Do not re-add removed badges, chips, statistic cards, or technical info panels unless the user explicitly requests them.
