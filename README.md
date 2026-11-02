@@ -22,7 +22,7 @@
 
 1. **Open `Code Locker — Chess Cipher v2.html`** in any modern browser. Stay on the **🔒 Protect code** tab.
 2. **Paste your source code** into the *Source code* box — the counter shows lines and size.
-3. **Type a strong password.** ⚠️ There is **no password recovery** — lose it and the data is gone.
+3. **Enter a password of at least 16 characters**, then confirm it. A long, unique passphrase is recommended. ⚠️ There is **no password recovery** — lose it and the data is gone.
 4. **Click `🔐 Encrypt`.** The tool runs PBKDF2 → HKDF → AES-256-GCM → random padding → chess encoding and shows the **PGN output**.
 5. **Share it** two ways:
    - **Copy** the PGN text and paste it anywhere (chat, email, README…), or
@@ -121,7 +121,8 @@ console.log("PGN was hiding AES-256-GCM all along.");
 - ✅ Random padding hides the exact plaintext length within a power-of-two size bucket
 - ✅ Backward-compatible decryption for v2 (600,000 iterations) and legacy (100,000 iterations) files
 - ⚠️ **No password recovery** — if lost, data is gone
-- ⚠️ Use a unique, long password (ideally 16+ characters) and share it over a **separate channel** from the HTML/PGN
+- ✅ New encryptions require at least 16 Unicode characters and a matching confirmation; passwords are limited to 1,024 UTF-8 bytes.
+- ⚠️ Use a unique, long passphrase and share it over a **separate channel** from the HTML/PGN
 - ⚠️ Chess notation is only an encoding/obfuscation layer; the cryptographic protection comes from AES-GCM
 - ⚠️ PBKDF2 is not memory-hard like Argon2id. This browser-only build uses native Web Crypto so it can work offline without loading third-party code. A future Argon2id migration should bundle and audit a maintained implementation, not fetch executable crypto code from a CDN.
 - ⚠️ Treat downloaded protected HTML as executable content; open it only if you trust its source
