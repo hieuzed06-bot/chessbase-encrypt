@@ -70,7 +70,7 @@ async function unlock(){
 document.getElementById('btn').addEventListener('click',unlock);
 document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
 document.getElementById('copy').addEventListener('click',()=>navigator.clipboard.writeText(document.getElementById('code').textContent));
-<\/script></body></html>\`;
+<\/script></body></html>`;
 }
 
 // ── UI state ────────────────────────────────────────────
