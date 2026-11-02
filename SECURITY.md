@@ -13,12 +13,13 @@ Include the affected file or feature, reproduction steps, impact, and any sugges
 - A fixed canonical Additional Authenticated Data (AAD) value binds the format version, KDF, work factor, cipher and codec identifier. Altered or mismatched metadata causes authentication failure.
 - Plaintext is length-prefixed and padded with random bytes to the next power-of-two bucket (minimum 256 bytes), reducing exact-length leakage but not hiding the bucket or total PGN size.
 - The versioned CCX v3 envelope begins with the `CCX3` marker, then salt, nonce and ciphertext+tag. The chess notation remains a reversible encoding layer, not cryptographic protection.
-- Decryption remains compatible with v2 files (PBKDF2-SHA-256, 600,000 iterations) and legacy files (100,000 iterations).
+- Decryption remains compatible with v2 files (PBKDF2-SHA-256, 600,000 iterations) and legacy files (100,000 iterations). Both legacy KDF attempts are performed before returning, avoiding an early-success timing distinction between formats.
 - PBKDF2 is not memory-hard like Argon2id. This implementation intentionally uses browser-native Web Crypto to remain self-contained and offline-capable; do not claim Argon2id protection. A future Argon2id migration should bundle and audit a maintained implementation.
 
 ## Safe use
 
-- Use a unique, long password (ideally 16+ characters); there is no password recovery.
+- New encryptions enforce a minimum of 16 Unicode characters and a maximum of 1,024 UTF-8 bytes; the UI also requires password confirmation. Decryption remains backward-compatible with existing shorter passwords.
+- Use a unique, long passphrase; there is no password recovery.
 - Send the password through a channel separate from the PGN or HTML file.
 - Do not paste production credentials, API keys, or other high-value secrets into a page hosted on a public website. Prefer a trusted local copy and review the source before use.
 - A downloaded self-decrypting HTML file contains executable JavaScript. Open it only if you trust the source.

@@ -108,11 +108,17 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
       <div class="pass-wrap">
         <label>Password</label>
         <input type="password" id="pass-enc" placeholder="Required — encryption refused if empty">
-        <div class="pass-note">Mandatory. No fallback key. No password = no decrypt.</div>
+        <div class="pass-note">Use at least 16 characters. A long passphrase is recommended.</div>
       </div>
       <button class="btn-primary" id="enc-btn" >
         <span id="enc-label">🔐 Encrypt</span>
       </button>
+    </div>
+    <div class="pass-row" style="margin-top:0">
+      <div class="pass-wrap">
+        <label for="pass-confirm">Confirm password</label>
+        <input type="password" id="pass-confirm" autocomplete="new-password" placeholder="Re-enter password">
+      </div>
     </div>
 
     <div id="enc-result" style="display:none">

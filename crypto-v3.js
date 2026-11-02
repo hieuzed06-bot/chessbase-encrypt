@@ -7,6 +7,22 @@ const ITERATIONS = 1_000_000;
 const AAD = TE.encode('CodeLocker|CCX|3|PBKDF2-SHA256|1000000|AES-256-GCM|MOVE-CODEC-1');
 const MAX_SOURCE_BYTES = 1024 * 1024;
 const MAX_PADDED_BYTES = 2 * 1024 * 1024;
+const MIN_PASSWORD_CODE_POINTS = 16;
+const MAX_PASSWORD_BYTES = 1024;
+
+// Enforce a passphrase-length policy only when creating new ciphertext.
+// Decryption deliberately remains permissive for older files.
+export function validateEncryptionPassword(password) {
+  if (typeof password !== 'string') return 'Password is required.';
+  if (Array.from(password).length < MIN_PASSWORD_CODE_POINTS) {
+    return 'Use a password or passphrase of at least 16 characters.';
+  }
+  if (TE.encode(password).length > MAX_PASSWORD_BYTES) {
+    return 'Password must not exceed 1,024 UTF-8 bytes.';
+  }
+  if (!password.trim()) return 'Password cannot contain only whitespace.';
+  return null;
+}
 
 function randomBytes(length) {
   const out = new Uint8Array(length);
@@ -56,7 +72,8 @@ function unpackAndValidate(packed) {
 }
 
 export async function encryptBytes(text, password) {
-  if (typeof password !== 'string' || !password.length) throw new Error('Password is required.');
+  const passwordError = validateEncryptionPassword(password);
+  if (passwordError) throw new Error(passwordError);
   const plain = TE.encode(text);
   if (plain.length > MAX_SOURCE_BYTES) throw new Error('Source exceeds the 1 MiB limit.');
   const salt = randomBytes(16);
@@ -88,6 +105,9 @@ async function decryptV3(buffer, password) {
 
 async function decryptLegacy(buffer, password) {
   if (buffer.length < 45) throw new Error('Data too short — corrupted or invalid PGN.');
+  // Always perform both compatibility attempts. Returning after the first success
+  // would expose which legacy work factor matched through a coarse timing signal.
+  let recovered = null;
   for (const iterations of [600000, 100000]) {
     try {
       const base = await crypto.subtle.importKey('raw', TE.encode(password), 'PBKDF2', false, ['deriveKey']);
@@ -98,9 +118,10 @@ async function decryptLegacy(buffer, password) {
       const plain = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: buffer.subarray(16, 28) }, key, buffer.subarray(28)
       );
-      return TD.decode(plain);
+      if (recovered === null) recovered = new Uint8Array(plain);
     } catch {}
   }
+  if (recovered !== null) return TD.decode(recovered);
   throw new Error('Decryption failed — wrong password or data was tampered with.');
 }
 
