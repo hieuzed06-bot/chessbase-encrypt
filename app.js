@@ -6,7 +6,7 @@ function buildProtectedPage(pgn){
   const nonceBytes=crypto.getRandomValues(new Uint8Array(16));
   const nonce=btoa(String.fromCharCode(...nonceBytes));
   // Cipher PGN alphabet cannot contain a backtick, so it is safe in this template literal.
-  return\`<!DOCTYPE html>
+  return`<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-\${nonce}'; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer"><title>Protected Code — Chess Cipher</title>
