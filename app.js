@@ -103,8 +103,12 @@ function updateSrcInfo(){
 async function doEncrypt(){
   const src=document.getElementById('src').value;
   const pw=document.getElementById('pass-enc').value;
+  const confirmPw=document.getElementById('pass-confirm').value;
   showMsg('enc-err','','');
-  if(!pw){showMsg('enc-err','Password is required — encryption refused without a password.','err');return;}
+  if(pw!==confirmPw){showMsg('enc-err','Passwords do not match.','err');return;}
+  if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');return;}
+  if(new TextEncoder().encode(pw).length>1024){showMsg('enc-err','Password must not exceed 1,024 UTF-8 bytes.','err');return;}
+  if(!pw.trim()){showMsg('enc-err','Password cannot contain only whitespace.','err');return;}
   if(!src.trim()){showMsg('enc-err','No code to encrypt.','err');return;}
   if(new TextEncoder().encode(src).length>MAX_SOURCE_BYTES){showMsg('enc-err','Source exceeds the 1 MiB limit.','err');return;}
   setBusy('enc-btn',true,'');
@@ -140,6 +144,7 @@ function downloadPage(){
 function clearEnc(){
   document.getElementById('src').value='';
   document.getElementById('pass-enc').value='';
+  document.getElementById('pass-confirm').value='';
   document.getElementById('pgn-out').value='';
   document.getElementById('enc-result').style.display='none';
   document.getElementById('src-info').textContent='0 lines · 0 B';
