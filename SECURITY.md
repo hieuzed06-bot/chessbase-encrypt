@@ -18,7 +18,8 @@ Include the affected file or feature, reproduction steps, impact, and any sugges
 
 ## Safe use
 
-- Use a unique, long password (ideally 16+ characters); there is no password recovery.
+- New encryptions enforce a minimum of 16 Unicode characters and a maximum of 1,024 UTF-8 bytes; the UI also requires password confirmation. Decryption remains backward-compatible with existing shorter passwords.
+- Use a unique, long passphrase; there is no password recovery.
 - Send the password through a channel separate from the PGN or HTML file.
 - Do not paste production credentials, API keys, or other high-value secrets into a page hosted on a public website. Prefer a trusted local copy and review the source before use.
 - A downloaded self-decrypting HTML file contains executable JavaScript. Open it only if you trust the source.
