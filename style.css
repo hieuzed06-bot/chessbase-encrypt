@@ -1,0 +1,50 @@
+/* --- Password Strength Meter --- */
+.strength-meter {
+    height: 4px;
+    background: #30363d;
+    border-radius: 2px;
+    margin-top: 6px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+.strength-meter-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 0.3s ease, background-color 0.3s ease;
+}
+.strength-text {
+    font-size: 12px;
+    margin-top: 4px;
+    color: #8b949e;
+    min-height: 18px;
+    transition: color 0.3s ease;
+}
+
+/* --- Toast Notification --- */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #161b22;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none; /* Không chặn click khi đang hiện */
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+.toast.success { border-left: 4px solid #769656; }
+.toast.error { border-left: 4px solid #f85149; }
