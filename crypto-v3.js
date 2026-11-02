@@ -105,6 +105,9 @@ async function decryptV3(buffer, password) {
 
 async function decryptLegacy(buffer, password) {
   if (buffer.length < 45) throw new Error('Data too short — corrupted or invalid PGN.');
+  // Always perform both compatibility attempts. Returning after the first success
+  // would expose which legacy work factor matched through a coarse timing signal.
+  let recovered = null;
   for (const iterations of [600000, 100000]) {
     try {
       const base = await crypto.subtle.importKey('raw', TE.encode(password), 'PBKDF2', false, ['deriveKey']);
@@ -115,9 +118,10 @@ async function decryptLegacy(buffer, password) {
       const plain = await crypto.subtle.decrypt(
         { name: 'AES-GCM', iv: buffer.subarray(16, 28) }, key, buffer.subarray(28)
       );
-      return TD.decode(plain);
+      if (recovered === null) recovered = new Uint8Array(plain);
     } catch {}
   }
+  if (recovered !== null) return TD.decode(recovered);
   throw new Error('Decryption failed — wrong password or data was tampered with.');
 }
 
