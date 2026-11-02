@@ -1,7 +1,8 @@
 PROJECT MEMORY — CODE LOCKER
-Last updated: 2026-11-01
+Last updated: 2026-11-02
 Repository: https://github.com/hieuzed06-bot/chessbase-encrypt
 Default branch: main
+Active experimental work: feat/ccx-v3-experimental-security (Draft PR #6; not merged into main). GitHub Actions npm test passed for the current PR revision. Do not describe it as deployed or merged.
 
 PURPOSE
 Code Locker is a browser-based tool that encrypts source code and disguises the encrypted bytes as chess-style PGN moves. It supports any programming language by converting source text to UTF-8 bytes before encryption. Users can export PGN text or a self-decrypting protected HTML file.
@@ -13,17 +14,22 @@ CURRENT REPOSITORY STATE
 - Do not assume there are unmerged changes from those PRs. Check GitHub for the latest state before making further changes.
 - Main application files:
   - index.html — UI shell and restrictive meta Content-Security-Policy.
-  - app.js — application logic, browser cryptography, encryption/decryption, protected HTML generation.
+  - app.js — application logic, encryption/decryption integration, protected HTML generation.
+  - crypto-v3.js — CCX v3 browser-native cryptographic envelope.
   - codec.js — chess-byte and PGN conversion plus input limits and validation.
   - test/codec.test.js — automated codec tests.
+  - test/crypto-v3.test.js — CCX v3 encryption, randomization and tamper tests.
   - package.json — npm test script using Node's built-in test runner.
   - .github/workflows/tests.yml — GitHub Actions workflow running npm test on pushes and pull requests.
   - README.md — user documentation.
   - SECURITY.md — vulnerability reporting and security guidance.
 
 SECURITY DESIGN
-- New encryption uses PBKDF2-SHA256 with 600,000 iterations and AES-256-GCM.
-- Decryption retains compatibility with legacy files created using 100,000 PBKDF2 iterations.
+- On main, check the actual deployed cryptographic version before making claims; main may still use the earlier PBKDF2/AES-GCM format.
+- The experimental CCX v3 branch uses PBKDF2-HMAC-SHA-256 with 1,000,000 iterations, HKDF-SHA-256 key separation, AES-256-GCM with 128-bit tag and fixed version-bound AAD.
+- CCX v3 uses a fresh 16-byte salt and 12-byte nonce per encryption, plus random padding to a power-of-two size bucket.
+- CCX v3 decryptor retains compatibility with v2 (600,000 iterations) and legacy (100,000 iterations) files.
+- CCX v3 does NOT implement Argon2id or keyed chess mapping yet. Do not claim these features exist.
 - The main page loads app.js as a same-origin JavaScript module and uses script-src 'self'. Inline JavaScript event-handler attributes were removed.
 - Downloaded protected HTML uses a fresh cryptographically random CSP nonce for its embedded decryptor.
 - The main page CSP still permits inline styles via style-src 'unsafe-inline'; do not claim that all inline content has been eliminated.
@@ -54,3 +60,14 @@ WORKING GUIDELINES FOR FUTURE CONTRIBUTORS / AI ASSISTANTS
 - Update README.md and SECURITY.md when behavior or security assumptions change.
 - Report honestly which tests were run and which browser checks remain unverified.
 - Do not claim a deployment succeeded unless the deployment provider confirms it.
+
+
+WEBSITE UI SIMPLICITY — IMPORTANT, MUST FOLLOW
+- Keep the website interface minimal, clean, and focused on the actual workflow: Protect code, Unlock, source/PGN input, password, result, copy, download, and clear actions.
+- Do NOT add decorative statistic chips, feature badges, algorithm/version pills, specification cards, metric cards, or repeated technical summaries to the website.
+- Do NOT add a large "How it works" / cryptographic specification panel to the main page unless the user explicitly asks for it.
+- Do not display internal implementation details (AES rounds, KDF iteration counts, nonce sizes, padding details, compatibility labels) as decorative UI badges or cards.
+- Put technical explanations in README.md or SECURITY.md instead of cluttering index.html.
+- Before adding any new UI section, ask whether it directly helps a user complete Protect/Unlock. If not, leave it out.
+- When asked to clean up the website, remove redundant visual elements while preserving functional controls and accessibility labels. Do not redesign unrelated areas or remove working features.
+- These rules are persistent project requirements. Future AI assistants must read and obey this section before editing index.html.
