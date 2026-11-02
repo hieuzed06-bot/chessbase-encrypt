@@ -3,6 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --check app.js && node --check crypto-v3.js && node --test"
   }
 }
