@@ -7,6 +7,22 @@ const ITERATIONS = 1_000_000;
 const AAD = TE.encode('CodeLocker|CCX|3|PBKDF2-SHA256|1000000|AES-256-GCM|MOVE-CODEC-1');
 const MAX_SOURCE_BYTES = 1024 * 1024;
 const MAX_PADDED_BYTES = 2 * 1024 * 1024;
+const MIN_PASSWORD_CODE_POINTS = 16;
+const MAX_PASSWORD_BYTES = 1024;
+
+// Enforce a passphrase-length policy only when creating new ciphertext.
+// Decryption deliberately remains permissive for older files.
+export function validateEncryptionPassword(password) {
+  if (typeof password !== 'string') return 'Password is required.';
+  if (Array.from(password).length < MIN_PASSWORD_CODE_POINTS) {
+    return 'Use a password or passphrase of at least 16 characters.';
+  }
+  if (TE.encode(password).length > MAX_PASSWORD_BYTES) {
+    return 'Password must not exceed 1,024 UTF-8 bytes.';
+  }
+  if (!password.trim()) return 'Password cannot contain only whitespace.';
+  return null;
+}
 
 function randomBytes(length) {
   const out = new Uint8Array(length);
@@ -56,7 +72,8 @@ function unpackAndValidate(packed) {
 }
 
 export async function encryptBytes(text, password) {
-  if (typeof password !== 'string' || !password.length) throw new Error('Password is required.');
+  const passwordError = validateEncryptionPassword(password);
+  if (passwordError) throw new Error(passwordError);
   const plain = TE.encode(text);
   if (plain.length > MAX_SOURCE_BYTES) throw new Error('Source exceeds the 1 MiB limit.');
   const salt = randomBytes(16);
