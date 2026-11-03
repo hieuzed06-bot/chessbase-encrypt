@@ -1,145 +1,164 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; font-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="referrer" content="no-referrer">
-<title>🔐 Code Locker</title>
+<meta name="color-scheme" content="dark light">
+<title>ChessCrypt — Private Code Vault</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-:root{color-scheme:dark;--bg:#080d18;--panel:#111b2d;--panel2:#17243a;--text:#edf3ff;--muted:#91a2bd;--line:rgba(163,184,219,.15);--accent:#8295ff;--cyan:#64d7e8;--green:#42d6a0;--red:#ff7887;--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
-body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--text);min-height:100vh;padding:42px 16px 60px;background:radial-gradient(ellipse at 12% 0%,rgba(85,111,238,.23),transparent 38%),radial-gradient(ellipse at 95% 22%,rgba(54,194,212,.13),transparent 32%),linear-gradient(160deg,#080d18,#0b1220 60%,#0a1020)}
-.wrap{width:100%;max-width:860px;margin:auto}.hdr{margin-bottom:26px;padding:8px 4px}.hdr-top{display:flex;align-items:center;gap:15px;margin-bottom:12px}.brand-mark{display:grid;place-items:center;width:54px;height:54px;border:1px solid rgba(160,179,255,.3);border-radius:17px;background:linear-gradient(145deg,rgba(116,137,255,.25),rgba(64,205,219,.1));font-size:27px;box-shadow:0 10px 35px rgba(68,91,210,.18)}.eyebrow{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--cyan);margin-bottom:5px}.hdr h1{font-size:clamp(26px,5vw,35px);font-weight:800;letter-spacing:-1px}.hdr p{max-width:680px;font-size:14px;color:var(--muted);line-height:1.7}
-.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:7px;margin-bottom:18px;border:1px solid var(--line);border-radius:16px;background:rgba(15,24,41,.85)}.tab{min-height:46px;padding:10px;border:1px solid transparent;border-radius:11px;background:transparent;color:var(--muted);font-size:13px;font-weight:750;cursor:pointer}.tab.active{background:linear-gradient(135deg,rgba(112,132,255,.24),rgba(79,205,220,.12));border-color:rgba(139,156,255,.3);color:white}.tab:hover:not(.active){background:rgba(255,255,255,.05);color:white}
-#panel-protect,#panel-unlock{padding:clamp(18px,4vw,30px);border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(19,30,50,.97),rgba(13,22,38,.97));box-shadow:0 24px 80px rgba(0,0,0,.28)}
-label{display:block;margin-bottom:8px;color:#c2cfe3;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase}.file-picker-wrap{margin:12px 0 22px;padding:16px;border:1px dashed rgba(139,156,255,.4);border-radius:16px;background:rgba(94,117,220,.06)}.file-input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.file-picker{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 16px;border:1px solid rgba(139,156,255,.42);border-radius:11px;background:linear-gradient(135deg,rgba(106,127,255,.24),rgba(66,191,214,.13));color:#e8edff;font-size:13px;font-weight:750;letter-spacing:0;text-transform:none;cursor:pointer}.file-picker:hover,.file-input:focus-visible+.file-picker{border-color:var(--cyan);box-shadow:0 8px 24px rgba(83,126,235,.16)}.file-picker.secondary{border-color:rgba(100,215,232,.35);background:rgba(57,172,194,.12);color:#b8f1f5}.pass-note{margin-top:8px;color:#7184a1;font-size:11px;line-height:1.5}
-.code-wrap{position:relative}.line-info{position:absolute;top:12px;right:13px;color:#7184a1;font:11px var(--mono);pointer-events:none}textarea{display:block;width:100%;min-height:150px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(6,12,23,.7);color:var(--text);resize:vertical;outline:none;line-height:1.7;font-size:13px}textarea.code,textarea[readonly].plain{font-family:var(--mono);font-size:12.5px}textarea:focus,.pass-wrap input:focus{border-color:rgba(139,156,255,.75);box-shadow:0 0 0 3px rgba(108,129,255,.12)}textarea::placeholder,.pass-wrap input::placeholder{color:#5f718d}textarea[readonly]{background:rgba(8,15,28,.8);color:#c7d4e9}
-.pass-row{display:flex;gap:14px;align-items:flex-end;margin:20px 0}.pass-wrap{flex:1;min-width:0}.pass-wrap input{width:100%;min-height:45px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:rgba(6,12,23,.72);color:var(--text);font-size:13px;outline:none}.pass-field{position:relative}.pass-field input{padding-right:124px}.pass-field .btn-primary{position:absolute;right:4px;bottom:4px;min-height:37px;padding:8px 13px;font-size:12px;box-shadow:none}
-.btn-primary,.btn-download,.btn-sm{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:11px;font-weight:750;cursor:pointer;transition:transform .18s,filter .18s}.btn-primary{min-height:45px;padding:11px 19px;border:1px solid rgba(174,187,255,.35);background:linear-gradient(135deg,#7589ff,#586fe5);color:white;font-size:13px;box-shadow:0 8px 24px rgba(80,103,230,.22);white-space:nowrap}.btn-primary:hover:not(:disabled),.btn-download:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.1)}.btn-primary:disabled,.btn-download:disabled{opacity:.5;cursor:not-allowed}.btn-download{min-height:40px;padding:9px 14px;border:1px solid rgba(100,215,232,.3);background:rgba(58,166,190,.1);color:#b9f2f4;font-size:12px}.btn-sm{min-height:32px;padding:6px 10px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted);font-size:11px}.btn-sm:hover{border-color:rgba(139,156,255,.5);color:white}
-.action-row{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 0}.action-row>.btn-primary{width:100%;min-height:49px;font-size:14px}.out-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:24px 0 8px}.out-hdr label{margin:0}.msg{min-height:16px;margin-top:9px;font-size:12px;line-height:1.5}.msg.err{color:var(--red)}.msg.ok{color:var(--green)}.msg.warn{color:#ffd27a}.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.25);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}code{font-family:var(--mono);font-size:11px;background:#1d2b43;border:1px solid var(--line);padding:2px 5px;border-radius:5px;color:#b5c4ff}svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.toast{position:fixed;z-index:50;top:20px;left:50%;display:flex;align-items:center;gap:11px;max-width:calc(100vw - 28px);width:max-content;padding:13px 17px;border:1px solid rgba(66,214,160,.28);border-radius:14px;background:rgba(17,32,43,.97);color:#eafff6;box-shadow:0 16px 50px rgba(0,0,0,.38);font-size:13px;font-weight:650;opacity:0;pointer-events:none;transform:translate(-50%,-12px);transition:opacity .22s,transform .22s;backdrop-filter:blur(16px)}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{border-color:rgba(255,120,135,.38);background:rgba(47,23,34,.98);color:#ffe8ec}.toast-icon{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:rgba(66,214,160,.14);color:var(--green)}.toast.error .toast-icon{background:rgba(255,120,135,.14);color:var(--red)}
-@media(max-width:600px){body{padding:24px 12px 42px}.hdr p{font-size:12px}.brand-mark{width:47px;height:47px}.pass-row{align-items:stretch;flex-direction:column}.btn-primary{width:100%}.action-row>*{flex:1 1 100%}.out-hdr{align-items:flex-start}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+*{box-sizing:border-box}
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color-scheme:dark;--bg:#0b0e12;--surface:#121820;--surface-2:#19232d;--field:#0c1218;--text:#edf1eb;--muted:#a0aaa3;--line:rgba(202,211,194,.14);--accent:#c6a76a;--accent-2:#d9c18e;--green:#76c69a;--red:#ed8791;--shadow:0 24px 70px rgba(0,0,0,.28);--mono:ui-monospace,SFMono-Regular,Consolas,monospace}
+:root[data-theme="light"]{color-scheme:light;--bg:#f3f2ed;--surface:#fffefa;--surface-2:#f2efe6;--field:#fbfaf6;--text:#222720;--muted:#687168;--line:rgba(48,57,43,.16);--accent:#94733b;--accent-2:#72572c;--green:#28794d;--red:#b83e4c;--shadow:0 22px 60px rgba(38,43,31,.09)}
+*{margin:0}
+body{min-height:100vh;padding:34px 16px 56px;background:radial-gradient(ellipse at 8% 0%,rgba(198,167,106,.12),transparent 34%),radial-gradient(ellipse at 95% 18%,rgba(90,132,113,.09),transparent 30%),var(--bg);color:var(--text);transition:background .2s,color .2s}
+button,input,textarea{font:inherit}
+button{color:inherit}
+.wrap{width:100%;max-width:790px;margin:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:34px}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.brand-mark{display:grid;place-items:center;width:46px;height:46px;border:1px solid rgba(198,167,106,.42);border-radius:14px;background:linear-gradient(145deg,rgba(198,167,106,.19),rgba(90,132,113,.08));color:var(--accent-2);font-size:25px}
+.brand-name{font-size:19px;font-weight:820;letter-spacing:.025em}.brand-sub{margin-top:3px;color:var(--muted);font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.top-actions{display:flex;gap:8px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:38px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer;transition:border-color .18s,background .18s}
+.icon-btn:hover{border-color:var(--accent);color:var(--text)}
+.hero{margin-bottom:23px}.hero h1{font-size:clamp(27px,5vw,38px);line-height:1.12;letter-spacing:-.045em;font-weight:800}.hero p{max-width:610px;margin-top:10px;color:var(--muted);font-size:14px;line-height:1.7}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:6px;margin-bottom:14px;border:1px solid var(--line);border-radius:14px;background:var(--surface-2)}
+.tab{min-height:45px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--muted);font-size:13px;font-weight:750;cursor:pointer;transition:background .18s,border-color .18s,color .18s}
+.tab.active{border-color:rgba(198,167,106,.38);background:rgba(198,167,106,.13);color:var(--text)}
+.panel{padding:clamp(17px,4vw,27px);border:1px solid var(--line);border-radius:20px;background:var(--surface);box-shadow:var(--shadow)}
+.field-label{display:block;margin:0 0 8px;color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.075em;text-transform:uppercase}
+.dropzone{margin:10px 0 20px;padding:18px;border:1px dashed rgba(198,167,106,.52);border-radius:14px;background:rgba(198,167,106,.045);transition:border-color .18s,background .18s}
+.dropzone.is-over{border-color:var(--accent);background:rgba(198,167,106,.13)}
+.file-input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.file-input:focus-visible+.file-picker{outline:2px solid var(--accent);outline-offset:3px}
+.drop-content{display:flex;align-items:center;gap:13px;flex-wrap:wrap}
+.drop-icon{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--surface-2);color:var(--accent);font-size:19px}
+.drop-copy{flex:1;min-width:150px}.drop-title{font-size:13px;font-weight:720}.drop-hint,.help{margin-top:5px;color:var(--muted);font-size:11px;line-height:1.55}
+.file-picker{display:inline-flex;align-items:center;justify-content:center;min-height:39px;padding:9px 13px;border:1px solid rgba(198,167,106,.5);border-radius:9px;background:rgba(198,167,106,.12);color:var(--text);font-size:12px;font-weight:750;cursor:pointer}
+.file-picker:hover{border-color:var(--accent);background:rgba(198,167,106,.2)}
+textarea{display:block;width:100%;min-height:148px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--text);resize:vertical;outline:none;line-height:1.65;font-size:13px}
+textarea.code,textarea.plain{font-family:var(--mono);font-size:12px}
+textarea:focus,.password-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(198,167,106,.13)}
+textarea::placeholder,.password-input::placeholder{color:var(--muted);opacity:.7}
+.line-info{display:block;margin-top:6px;color:var(--muted);font:11px var(--mono);text-align:right}
+.pass-row{margin:19px 0}.password-input{width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--text);outline:none;font-size:13px}
+.action-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
+.btn-primary,.btn-secondary,.btn-sm{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:10px 15px;border-radius:10px;font-size:12px;font-weight:760;cursor:pointer;transition:transform .18s,filter .18s,border-color .18s}
+.btn-primary{width:100%;min-height:48px;border:1px solid rgba(198,167,106,.6);background:linear-gradient(120deg,#b18d50,#8d754b);color:#fffdf7}
+:root[data-theme="light"] .btn-primary{color:white}
+.btn-secondary{border:1px solid var(--line);background:var(--surface-2);color:var(--text)}
+.btn-sm{min-height:32px;padding:6px 10px;border:1px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:11px}
+.btn-primary:hover:not(:disabled),.btn-secondary:hover,.btn-sm:hover{filter:brightness(1.08);transform:translateY(-1px)}
+button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
+.out-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:23px 0 8px}
+.out-hdr .field-label{margin:0}
+.msg{min-height:16px;margin-top:9px;font-size:12px;line-height:1.5}.msg.err{color:var(--red)}.msg.ok{color:var(--green)}.msg.warn{color:var(--accent-2)}
+.busy-progress{display:none;margin-top:14px}.busy-progress.visible{display:block}.busy-progress progress{display:block;width:100%;height:5px;accent-color:var(--accent);border:0;border-radius:99px;overflow:hidden}.busy-progress progress::-webkit-progress-bar{background:var(--surface-2);border-radius:99px}.busy-progress progress::-webkit-progress-value{background:var(--accent);border-radius:99px}.busy-progress progress::-moz-progress-bar{background:var(--accent);border-radius:99px}.busy-label{display:block;margin-top:6px;color:var(--muted);font-size:11px}
+.toast{position:fixed;z-index:20;top:16px;left:50%;display:flex;align-items:center;gap:10px;width:max-content;max-width:calc(100vw - 28px);padding:12px 15px;border:1px solid rgba(118,198,154,.35);border-radius:12px;background:var(--surface);color:var(--text);box-shadow:var(--shadow);font-size:12px;font-weight:680;opacity:0;pointer-events:none;transform:translate(-50%,-10px);transition:opacity .2s,transform .2s}
+.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{border-color:rgba(237,135,145,.55)}.toast-icon{color:var(--green);font-weight:900}.toast.error .toast-icon{color:var(--red)}
+[hidden]{display:none!important}
+@media(max-width:560px){body{padding:20px 12px 38px}.topbar{margin-bottom:27px}.brand-mark{width:42px;height:42px}.brand-name{font-size:17px}.brand-sub{font-size:9px}.icon-btn{min-height:36px;padding:7px 9px}.hero p{font-size:13px}.panel{border-radius:16px}.drop-content{align-items:flex-start}.file-picker{width:100%}.out-hdr{align-items:flex-start}.out-hdr .btn-sm{flex-shrink:0}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <div class="hdr">
-    <div class="hdr-top">
-      <span class="brand-mark" aria-hidden="true">♟</span>
-      <div>
-        <div class="eyebrow">PRIVATE BY DESIGN</div><h1>Code Locker</h1>
-      </div>
+<main class="wrap">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">♞</span>
+      <div><div class="brand-name">CHESSCRYPT</div><div class="brand-sub" data-i18n="brandSub">Private code vault</div></div>
     </div>
-    <p>Protect code and documents with AES-256-GCM, then encode the encrypted data as chess notation. Create a shareable, self-decrypting HTML page or download a .ccx file.</p>
+    <div class="top-actions">
+      <button class="icon-btn" id="language-toggle" type="button" aria-label="Switch language">VI</button>
+      <button class="icon-btn" id="theme-toggle" type="button" aria-label="Switch color theme"><span id="theme-icon" aria-hidden="true">☼</span><span data-i18n="theme">Light</span></button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 data-i18n="headline">Keep your code on the board. Keep it private.</h1>
+    <p data-i18n="intro">Protect code and documents, encode the encrypted data as chess notation, and unlock it whenever you need.</p>
+  </section>
+
+  <div class="tabs" role="tablist" aria-label="Workspace">
+    <button class="tab active" id="tab-protect" type="button" role="tab" aria-selected="true" data-i18n="protectTab">♟ Protect</button>
+    <button class="tab" id="tab-unlock" type="button" role="tab" aria-selected="false" data-i18n="unlockTab">♙ Unlock</button>
   </div>
 
-  <div class="tabs">
-    <button class="tab active" id="tab-protect" >🔒 Protect code</button>
-    <button class="tab" id="tab-unlock"  >🔓 Unlock</button>
-  </div>
-
-  <!-- PROTECT -->
-  <div id="panel-protect">
-    <label>Choose a file (optional) or paste source code</label>
-    <div class="file-picker-wrap">
+  <section class="panel" id="panel-protect" role="tabpanel" aria-labelledby="tab-protect">
+    <label class="field-label" for="file-input" data-i18n="fileOptional">Choose a file or paste source code</label>
+    <div class="dropzone" id="protect-dropzone" data-drop-input="file-input">
       <input class="file-input" type="file" id="file-input" accept=".pdf,.xls,.xlsx,.xlsm,.doc,.docx,.docm,.lua,.luau,.txt,.js,.mjs,.cjs,.sh,.bash,.zsh,.command,.cs,.bat,.cmd,.ps1,.psm1,.py,.json,.csv,.xml,.html,.css,.sql,.md">
-      <label class="file-picker" for="file-input">＋ Upload a file</label>
-      <div class="pass-note" id="file-info">No file selected · Maximum encrypted payload: 1 MiB</div>
+      <div class="drop-content">
+        <span class="drop-icon" aria-hidden="true">♜</span>
+        <div class="drop-copy"><div class="drop-title" data-i18n="dropTitle">Drop a file here</div><div class="drop-hint" data-i18n="dropHint">or browse your device · up to 1 MiB</div></div>
+        <label class="file-picker" for="file-input" data-i18n="browseFiles">Browse files</label>
+      </div>
+      <div class="help" id="file-info" data-i18n="noFile">No file selected</div>
     </div>
-    <label>Or paste text / terminal commands</label>
-    <div class="code-wrap">
-      <textarea id="src" class="code" rows="10" placeholder="Paste source code or terminal commands here (Lua, Luau, JS, SH, C#, etc.)..." ></textarea>
-      <span class="line-info" id="src-info">0 lines · 0 B</span>
-    </div>
+
+    <label class="field-label" for="src" data-i18n="sourceLabel">Or paste text / source code</label>
+    <textarea id="src" class="code" rows="9" data-i18n-placeholder="sourcePlaceholder" placeholder="Paste code or text here..."></textarea>
+    <span class="line-info" id="src-info">0 lines · 0 B</span>
 
     <div class="pass-row">
-      <div class="pass-wrap">
-        <label>Password</label>
-        <input type="password" id="pass-enc" placeholder="Required — encryption refused if empty">
-        <div class="pass-note">Use at least 16 characters. A long passphrase is recommended.</div>
-      </div>
+      <label class="field-label" for="pass-enc" data-i18n="password">Password</label>
+      <input class="password-input" type="password" id="pass-enc" autocomplete="new-password" data-i18n-placeholder="passwordPlaceholder" placeholder="Enter a strong password">
+      <div class="help" data-i18n="passwordHelp">Use at least 16 characters. A long passphrase is recommended.</div>
     </div>
-    <div class="pass-row" style="margin-top:0">
-      <div class="pass-wrap">
-        <label for="pass-confirm">Confirm password</label>
-        <input type="password" id="pass-confirm" autocomplete="new-password" placeholder="Re-enter password">
-      </div>
+    <div class="pass-row">
+      <label class="field-label" for="pass-confirm" data-i18n="confirmPassword">Confirm password</label>
+      <input class="password-input" type="password" id="pass-confirm" autocomplete="new-password" data-i18n-placeholder="confirmPlaceholder" placeholder="Re-enter your password">
     </div>
-    <div class="action-row">
-      <button class="btn-primary" id="enc-btn" type="button"><span id="enc-label">🔐 Encrypt</span></button>
-    </div>
+    <div class="action-row"><button class="btn-primary" id="enc-btn" type="button"><span id="enc-label" data-i18n="encrypt">♜ Encrypt</span></button></div>
+    <div class="busy-progress" id="enc-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="encrypting">Encrypting securely…</span></div>
 
     <div id="enc-result" style="display:none">
       <div class="out-hdr">
-        <label style="margin:0">PGN (encrypted chess notation)</label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span style="font-size:11px;color:var(--text3)" id="pgn-meta"></span>
-          <button class="btn-sm" id="pgn-copy-btn">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <span id="pgn-copy">Copy</span>
-          </button>
-        </div>
+        <label class="field-label" for="pgn-out" data-i18n="encryptedPgn">Encrypted chess notation (PGN)</label>
+        <span id="pgn-meta" class="help"></span>
+        <button class="btn-sm" id="pgn-copy-btn" type="button"><span id="pgn-copy" data-i18n="copy">Copy</span></button>
       </div>
       <textarea id="pgn-out" rows="7" readonly></textarea>
-
       <div class="action-row">
-        <button class="btn-download" id="dl-ccx-btn" type="button">Download encrypted .ccx</button>
-        <button class="btn-download" id="dl-btn" >
-          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download protected page
-        </button>
-        <button class="btn-sm" id="clear-enc-btn">
-          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-          Clear
-        </button>
+        <button class="btn-secondary" id="dl-ccx-btn" type="button" data-i18n="downloadCcx">Download .ccx</button>
+        <button class="btn-secondary" id="dl-btn" type="button" data-i18n="downloadHtml">Download protected HTML</button>
+        <button class="btn-sm" id="clear-enc-btn" type="button" data-i18n="clear">Clear</button>
       </div>
       <div class="msg" id="enc-msg"></div>
     </div>
     <div class="msg" id="enc-err"></div>
-  </div>
+  </section>
 
-  <!-- UNLOCK -->
-  <div id="panel-unlock" style="display:none">
-    <label>PGN or protected HTML page</label>
-    <div class="file-picker-wrap" style="margin:10px 0">
+  <section class="panel" id="panel-unlock" role="tabpanel" aria-labelledby="tab-unlock" style="display:none">
+    <label class="field-label" for="pgn-file" data-i18n="encryptedFile">Choose an encrypted file</label>
+    <div class="dropzone" id="unlock-dropzone" data-drop-input="pgn-file">
       <input class="file-input" type="file" id="pgn-file" accept=".ccx,.pgn,.txt,.html,.htm">
-      <label class="file-picker secondary" for="pgn-file">＋ Choose a file to decrypt</label>
-      <div class="pass-note" id="pgn-file-info">Supports .ccx, .pgn, .txt, and protected HTML</div>
+      <div class="drop-content">
+        <span class="drop-icon" aria-hidden="true">♛</span>
+        <div class="drop-copy"><div class="drop-title" data-i18n="dropEncrypted">Drop a .ccx, .pgn or protected HTML file</div><div class="drop-hint" data-i18n="orBrowse">or browse your device</div></div>
+        <label class="file-picker" for="pgn-file" data-i18n="browseFiles">Browse files</label>
+      </div>
+      <div class="help" id="pgn-file-info" data-i18n="supportedEncrypted">Supports .ccx, .pgn, .txt and protected HTML</div>
     </div>
-    <textarea id="pgn-in" rows="8" class="code" placeholder="Paste PGN chess notation here...&#10;&#10;[Event &quot;Secret&quot;]&#10;[Date &quot;...&quot;]&#10;...&#10;1. Rh5 Nb3 2. ..." ></textarea>
-
+    <label class="field-label" for="pgn-in" data-i18n="pastePgn">Or paste encrypted PGN</label>
+    <textarea id="pgn-in" rows="8" class="code" data-i18n-placeholder="pgnPlaceholder" placeholder="Paste chess notation here..."></textarea>
     <div class="pass-row">
-      <div class="pass-wrap">
-        <label>Password</label>
-        <input type="password" id="pass-dec" placeholder="Enter decryption password">
-        <div class="pass-note">Wrong password → decryption fails with authentication error.</div>
-      </div>
+      <label class="field-label" for="pass-dec" data-i18n="password">Password</label>
+      <input class="password-input" type="password" id="pass-dec" autocomplete="current-password" data-i18n-placeholder="decryptPassword" placeholder="Enter decryption password">
     </div>
-    <div class="action-row">
-      <button class="btn-primary" id="dec-btn" type="button"><span id="dec-label">🔓 Decrypt</span></button>
-    </div>
-
+    <div class="action-row"><button class="btn-primary" id="dec-btn" type="button"><span id="dec-label" data-i18n="decrypt">♙ Decrypt</span></button></div>
+    <div class="busy-progress" id="dec-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="decrypting">Decrypting and verifying…</span></div>
     <div id="dec-result" style="display:none">
-      <div class="out-hdr">
-        <label style="margin:0">Decrypted code</label>
-        <div style="display:flex;gap:6px;align-items:center">
-          <span style="font-size:11px;color:var(--text3)" id="dec-meta"></span>
-          <button class="btn-sm" id="dec-copy-btn">
-            <svg viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2v1"/></svg>
-            <span id="dec-copy">Copy</span>
-          </button>
-        </div>
-      </div>
+      <div class="out-hdr"><label class="field-label" for="code-out" data-i18n="decryptedCode">Decrypted code</label><span id="dec-meta" class="help"></span><button class="btn-sm" id="dec-copy-btn" type="button"><span id="dec-copy" data-i18n="copy">Copy</span></button></div>
       <textarea id="code-out" rows="12" readonly class="plain"></textarea>
     </div>
     <div class="msg" id="dec-msg"></div>
-  </div>
-
-</div>
+  </section>
+</main>
 <div id="toast" class="toast" role="status" aria-live="polite"><span class="toast-icon" id="toast-icon">✓</span><span id="toast-text"></span></div>
 <script type="module" src="./app.js"></script>
+<script type="module" src="./ui.js"></script>
 </body>
 </html>
