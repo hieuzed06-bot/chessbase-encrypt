@@ -98,9 +98,14 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
 
   <!-- PROTECT -->
   <div id="panel-protect">
-    <label>Source code</label>
+    <label>Choose a file (optional) or paste source code</label>
+    <div class="pass-wrap" style="margin-bottom:10px">
+      <input type="file" id="file-input" accept=".pdf,.xls,.xlsx,.xlsm,.doc,.docx,.docm,.lua,.luau,.txt,.js,.mjs,.cjs,.sh,.bash,.zsh,.command,.cs,.bat,.cmd,.ps1,.psm1,.py,.json,.csv,.xml,.html,.css,.sql,.md">
+      <div class="pass-note" id="file-info">No file selected · Maximum encrypted payload: 1 MiB</div>
+    </div>
+    <label>Or paste text / terminal commands</label>
     <div class="code-wrap">
-      <textarea id="src" class="code" rows="10" placeholder="Paste your source code here (JS, Python, C, SQL, any language)..." ></textarea>
+      <textarea id="src" class="code" rows="10" placeholder="Paste source code or terminal commands here (Lua, Luau, JS, SH, C#, etc.)..." ></textarea>
       <span class="line-info" id="src-info">0 lines · 0 B</span>
     </div>
 
@@ -135,6 +140,7 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
       <textarea id="pgn-out" rows="7" readonly></textarea>
 
       <div class="action-row">
+        <button class="btn-download" id="dl-ccx-btn" type="button">Download encrypted .ccx</button>
         <button class="btn-download" id="dl-btn" >
           <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Download protected page
@@ -152,6 +158,8 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
   <!-- UNLOCK -->
   <div id="panel-unlock" style="display:none">
     <label>PGN or protected HTML page</label>
+    <label for="pgn-file" style="margin-top:10px">Or load an encrypted .ccx file, PGN or protected HTML</label>
+    <input type="file" id="pgn-file" accept=".ccx,.pgn,.txt,.html,.htm">
     <textarea id="pgn-in" rows="8" class="code" placeholder="Paste PGN chess notation here...&#10;&#10;[Event &quot;Secret&quot;]&#10;[Date &quot;...&quot;]&#10;...&#10;1. Rh5 Nb3 2. ..." ></textarea>
 
     <div class="pass-row">
