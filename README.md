@@ -150,4 +150,4 @@ New encrypted byte streams begin with the `CCX3` magic marker, followed by a 16-
 - Text and uploaded file payloads are limited to 1 MiB after encrypted file metadata is added. Binary files are preserved byte-for-byte.
 - PGN input is limited to 8 MiB and accepts only the chess-cipher move format, PGN move numbers, headers, and result markers. SAN moves, comments, variations, and malformed tokens are rejected.
 - Run `npm test` locally; GitHub Actions runs the same codec test suite for pushes and pull requests.
-- The main app loads JavaScript from `app.js` under a `script-src 'self'` policy. Downloaded protected pages use a fresh per-page CSP nonce for their embedded decryptor.
+- GitHub Pages publishes the static Vite build from `dist/`; the app keeps a restrictive `script-src 'self'` policy. Downloaded protected pages use a fresh per-page CSP nonce for their embedded decryptor.
