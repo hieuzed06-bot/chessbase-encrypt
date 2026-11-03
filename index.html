@@ -114,7 +114,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <div class="action-row"><button class="btn-primary" id="enc-btn" type="button"><span id="enc-label" data-i18n="encrypt">♜ Encrypt</span></button></div>
     <div class="busy-progress" id="enc-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="encrypting">Encrypting securely…</span></div>
 
-    <div id="enc-result" hidden>
+    <div id="enc-result" style="display:none">
       <div class="out-hdr">
         <label class="field-label" for="pgn-out" data-i18n="encryptedPgn">Encrypted chess notation (PGN)</label>
         <button class="btn-sm" id="pgn-copy-btn" type="button"><span id="pgn-copy" data-i18n="copy">Copy</span></button>
@@ -130,7 +130,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <div class="msg" id="enc-err"></div>
   </section>
 
-  <section class="panel" id="panel-unlock" role="tabpanel" aria-labelledby="tab-unlock" hidden>
+  <section class="panel" id="panel-unlock" role="tabpanel" aria-labelledby="tab-unlock" style="display:none">
     <label class="field-label" for="pgn-file" data-i18n="encryptedFile">Choose an encrypted file</label>
     <div class="dropzone" id="unlock-dropzone" data-drop-input="pgn-file">
       <input class="file-input" type="file" id="pgn-file" accept=".ccx,.pgn,.txt,.html,.htm">
@@ -149,7 +149,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     </div>
     <div class="action-row"><button class="btn-primary" id="dec-btn" type="button"><span id="dec-label" data-i18n="decrypt">♙ Decrypt</span></button></div>
     <div class="busy-progress" id="dec-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="decrypting">Decrypting and verifying…</span></div>
-    <div id="dec-result" hidden>
+    <div id="dec-result" style="display:none">
       <div class="out-hdr"><label class="field-label" for="code-out" data-i18n="decryptedCode">Decrypted code</label><button class="btn-sm" id="dec-copy-btn" type="button"><span id="dec-copy" data-i18n="copy">Copy</span></button></div>
       <textarea id="code-out" rows="12" readonly class="plain"></textarea>
     </div>
