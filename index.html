@@ -58,6 +58,13 @@ textarea[readonly].plain{font-family:var(--mono);font-size:12.5px;color:var(--te
 .btn-sm{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;border-radius:var(--radius);font-size:12px;border:1px solid var(--border2);background:transparent;color:var(--text2);cursor:pointer;transition:.15s}
 .btn-sm:hover{border-color:var(--green);color:var(--green)}
 .btn-sm.danger:hover{border-color:var(--danger);color:var(--danger)}
+.file-picker-wrap{position:relative;margin-bottom:10px}
+.file-input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.file-picker{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 16px;border:1px dashed var(--green);border-radius:var(--radius);background:var(--green-bg);color:#c5e1a5;font-size:13px;font-weight:700;letter-spacing:0;text-transform:none;cursor:pointer;transition:.15s}
+.file-picker:hover,.file-input:focus-visible+.file-picker{background:#26351e;border-color:#a3c77a;outline:2px solid transparent}
+.file-picker.secondary{border-color:var(--blue);background:var(--blue-bg);color:#9ecbff}
+.file-picker.secondary:hover{background:#123657}
+
 
 .action-row{display:flex;gap:8px;flex-wrap:wrap;margin:1rem 0 0}
 .out-hdr{display:flex;align-items:center;justify-content:space-between;margin:1.25rem 0 5px}
@@ -99,9 +106,10 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
   <!-- PROTECT -->
   <div id="panel-protect">
     <label>Choose a file (optional) or paste source code</label>
-    <div class="pass-wrap" style="margin-bottom:10px">
-      <input type="file" id="file-input" accept=".pdf,.xls,.xlsx,.xlsm,.doc,.docx,.docm,.lua,.luau,.txt,.js,.mjs,.cjs,.sh,.bash,.zsh,.command,.cs,.bat,.cmd,.ps1,.psm1,.py,.json,.csv,.xml,.html,.css,.sql,.md">
-      <div class="pass-note" id="file-info">No file selected · Maximum encrypted payload: 1 MiB</div>
+    <div class="file-picker-wrap">
+      <input class="file-input" type="file" id="file-input" accept=".pdf,.xls,.xlsx,.xlsm,.doc,.docx,.docm,.lua,.luau,.txt,.js,.mjs,.cjs,.sh,.bash,.zsh,.command,.cs,.bat,.cmd,.ps1,.psm1,.py,.json,.csv,.xml,.html,.css,.sql,.md">
+      <label class="file-picker" for="file-input">＋ Tải file lên</label>
+      <div class="pass-note" id="file-info">Chưa chọn file · Dung lượng tối đa: 1 MiB</div>
     </div>
     <label>Or paste text / terminal commands</label>
     <div class="code-wrap">
@@ -158,8 +166,11 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
   <!-- UNLOCK -->
   <div id="panel-unlock" style="display:none">
     <label>PGN or protected HTML page</label>
-    <label for="pgn-file" style="margin-top:10px">Or load an encrypted .ccx file, PGN or protected HTML</label>
-    <input type="file" id="pgn-file" accept=".ccx,.pgn,.txt,.html,.htm">
+    <div class="file-picker-wrap" style="margin:10px 0">
+      <input class="file-input" type="file" id="pgn-file" accept=".ccx,.pgn,.txt,.html,.htm">
+      <label class="file-picker secondary" for="pgn-file">＋ Chọn file để giải mã</label>
+      <div class="pass-note" id="pgn-file-info">Hỗ trợ .ccx, .pgn, .txt và HTML đã bảo vệ</div>
+    </div>
     <textarea id="pgn-in" rows="8" class="code" placeholder="Paste PGN chess notation here...&#10;&#10;[Event &quot;Secret&quot;]&#10;[Date &quot;...&quot;]&#10;...&#10;1. Rh5 Nb3 2. ..." ></textarea>
 
     <div class="pass-row">
