@@ -1,5 +1,5 @@
 import { toPGN, fromPGN, MAX_SOURCE_BYTES, MAX_PGN_BYTES } from './codec.js';
-import { encryptBytes, decryptBytes } from './crypto-v3.js';
+import { encryptBytes, decryptBytes, encryptRawBytes, decryptRawBytes } from './crypto-v3.js';
 
 // ── Self-decrypt page template ─────────────────────────
 function buildProtectedPage(pgn){
@@ -74,7 +74,7 @@ document.getElementById('copy').addEventListener('click',()=>navigator.clipboard
 }
 
 // ── UI state ────────────────────────────────────────────
-let mode='protect', lastPGN='';
+let mode='protect', lastPGN='', selectedFile=null;
 
 function setMode(m){
   mode=m;
@@ -109,11 +109,13 @@ async function doEncrypt(){
   if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');return;}
   if(new TextEncoder().encode(pw).length>1024){showMsg('enc-err','Password must not exceed 1,024 UTF-8 bytes.','err');return;}
   if(!pw.trim()){showMsg('enc-err','Password cannot contain only whitespace.','err');return;}
-  if(!src.trim()){showMsg('enc-err','No code to encrypt.','err');return;}
-  if(new TextEncoder().encode(src).length>MAX_SOURCE_BYTES){showMsg('enc-err','Source exceeds the 1 MiB limit.','err');return;}
+  if(!selectedFile&&!src.trim()){showMsg('enc-err','Choose a file or enter source text.','err');return;}
+  const sourceBytes=selectedFile?new Uint8Array(await selectedFile.arrayBuffer()):new TextEncoder().encode(src);
+  const payload=selectedFile?packFilePayload(selectedFile,sourceBytes):sourceBytes;
+  if(payload.length>MAX_SOURCE_BYTES){showMsg('enc-err','File or source exceeds the 1 MiB encrypted payload limit.','err');return;}
   setBusy('enc-btn',true,'');
   try{
-    const buf=await encryptBytes(src,pw);
+    const buf=await encryptRawBytes(payload,pw);
     lastPGN=toPGN(buf);
     document.getElementById('pgn-out').value=lastPGN;
     document.getElementById('pgn-meta').textContent=buf.length+' moves · '+fmt(buf.length);
@@ -143,6 +145,8 @@ function downloadPage(){
 
 function clearEnc(){
   document.getElementById('src').value='';
+  document.getElementById('file-input').value='';selectedFile=null;
+  document.getElementById('file-info').textContent='No file selected';
   document.getElementById('pass-enc').value='';
   document.getElementById('pass-confirm').value='';
   document.getElementById('pgn-out').value='';
@@ -169,12 +173,10 @@ async function doDecrypt(){
   setBusy('dec-btn',true,'');
   try{
     const buf=fromPGN(pgn);
-    const code=await decryptBytes(buf,pw);
-    document.getElementById('code-out').value=code;
-    document.getElementById('dec-result').style.display='block';
-    const lines=code.split('\n').length;
-    document.getElementById('dec-meta').textContent=lines+' lines · '+code.length+' chars';
-    showMsg('dec-msg','✓ Decrypted — auth tag verified, data is intact.','ok');
+    const plain=await decryptRawBytes(buf,pw);
+    const file=parseFilePayload(plain);
+    if(file){downloadBytes(file.bytes,file.name,file.type);document.getElementById('dec-result').style.display='none';showMsg('dec-msg','✓ File decrypted and download started: '+file.name,'ok');}
+    else{const code=new TextDecoder('utf-8',{fatal:true}).decode(plain);document.getElementById('code-out').value=code;document.getElementById('dec-result').style.display='block';const lines=code.split('\n').length;document.getElementById('dec-meta').textContent=lines+' lines · '+code.length+' chars';showMsg('dec-msg','✓ Decrypted — authentication verified.','ok');}
   }catch(e){
     document.getElementById('dec-result').style.display='none';
     showMsg('dec-msg',e.message,'err');
@@ -191,6 +193,39 @@ function copyDecCode(){
 
 function clearDecMsg(){showMsg('dec-msg','','');}
 
+
+const FILE_PREFIX=new Uint8Array([67,67,88,70]);
+const ALLOWED_EXTENSIONS=new Set(['pdf','xls','xlsx','doc','docx','lua','luau','txt','js','mjs','cjs','sh','bash','cs','bat','cmd','ps1','py','json','csv','xml','html','css','sql','md']);
+function packFilePayload(file,bytes){
+  const name=file.name.split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g,'').slice(0,180);
+  const ext=(name.split('.').pop()||'').toLowerCase();
+  if(!ALLOWED_EXTENSIONS.has(ext))throw new Error('Unsupported file extension. Supported: PDF, Excel, Word, Lua/Luau, TXT, JS, SH, C# and terminal scripts.');
+  const type=/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i.test(file.type)?file.type:'application/octet-stream';
+  const meta=new TextEncoder().encode(JSON.stringify({name,type}));
+  const out=new Uint8Array(8+meta.length+bytes.length);
+  out.set(FILE_PREFIX,0);new DataView(out.buffer).setUint32(4,meta.length,false);out.set(meta,8);out.set(bytes,8+meta.length);
+  return out;
+}
+function parseFilePayload(bytes){
+  if(bytes.length<8||!FILE_PREFIX.every((b,i)=>bytes[i]===b))return null;
+  const n=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength).getUint32(4,false);
+  if(n<2||n>1024||8+n>bytes.length)throw new Error('Invalid encrypted file metadata.');
+  const meta=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(bytes.subarray(8,8+n)));
+  const name=String(meta.name||'download.bin').split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g,'').slice(0,180)||'download.bin';
+  const type=typeof meta.type==='string'&&/^[a-z0-9.+-]+\/[a-z0-9.+-]+$/i.test(meta.type)?meta.type:'application/octet-stream';
+  return {name,type,bytes:bytes.slice(8+n)};
+}
+function downloadBytes(bytes,name,type){
+  const url=URL.createObjectURL(new Blob([bytes],{type:type||'application/octet-stream'})),a=document.createElement('a');
+  a.href=url;a.download=name;a.rel='noopener';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+async function handleFileSelection(){
+  const file=document.getElementById('file-input').files[0];selectedFile=file||null;
+  document.getElementById('file-info').textContent=file?file.name+' · '+fmt(file.size):'No file selected';
+  if(file)document.getElementById('src').value='';
+  updateSrcInfo();
+}
+
 // ── Utils ────────────────────────────────────────────────
 function showMsg(id,text,cls){
   const el=document.getElementById(id);
@@ -201,7 +236,8 @@ function fmt(b){ return b<1024?b+' B':Math.round(b/1024*10)/10+' KB'; }
 // Bind controls without inline event-handler attributes.
 document.getElementById('tab-protect').addEventListener('click',()=>setMode('protect'));
 document.getElementById('tab-unlock').addEventListener('click',()=>setMode('unlock'));
-document.getElementById('src').addEventListener('input',updateSrcInfo);
+document.getElementById('src').addEventListener('input',()=>{selectedFile=null;document.getElementById('file-input').value='';document.getElementById('file-info').textContent='No file selected';updateSrcInfo();});
+document.getElementById('file-input').addEventListener('change',handleFileSelection);
 document.getElementById('enc-btn').addEventListener('click',doEncrypt);
 document.getElementById('pgn-copy-btn').addEventListener('click',copyPGN);
 document.getElementById('dl-btn').addEventListener('click',downloadPage);
