@@ -288,7 +288,7 @@ document.getElementById('pgn-copy-btn').addEventListener('click',copyPGN);
 document.getElementById('dl-btn').addEventListener('click',downloadPage);
 document.getElementById('dl-ccx-btn').addEventListener('click',downloadEncrypted);
 document.getElementById('clear-enc-btn').addEventListener('click',clearEnc);
-document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFile=null;document.getElementById('pgn-file').value='';document.getElementById('pgn-file-info').textContent='Hỗ trợ .ccx, .pgn, .txt và HTML đã bảo vệ';clearDecMsg();});
+document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFile=null;document.getElementById('pgn-file').value='';document.getElementById('pgn-file-info').textContent='Supports .ccx, .pgn, .txt, and protected HTML';clearDecMsg();});
 document.getElementById('pgn-file').addEventListener('change',handleCipherFileSelection);
 document.getElementById('dec-btn').addEventListener('click',doDecrypt);
 document.getElementById('dec-copy-btn').addEventListener('click',copyDecCode);
