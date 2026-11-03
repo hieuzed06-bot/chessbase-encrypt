@@ -98,9 +98,14 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
 
   <!-- PROTECT -->
   <div id="panel-protect">
-    <label>Source code</label>
+    <label>Choose a file (optional) or paste source code</label>
+    <div class="pass-wrap" style="margin-bottom:10px">
+      <input type="file" id="file-input" accept=".pdf,.xls,.xlsx,.doc,.docx,.lua,.luau,.txt,.js,.mjs,.cjs,.sh,.bash,.cs,.bat,.cmd,.ps1,.py,.json,.csv,.xml,.html,.css,.sql,.md">
+      <div class="pass-note" id="file-info">No file selected · Maximum encrypted payload: 1 MiB</div>
+    </div>
+    <label>Or paste text / terminal commands</label>
     <div class="code-wrap">
-      <textarea id="src" class="code" rows="10" placeholder="Paste your source code here (JS, Python, C, SQL, any language)..." ></textarea>
+      <textarea id="src" class="code" rows="10" placeholder="Paste source code or terminal commands here (Lua, Luau, JS, SH, C#, etc.)..." ></textarea>
       <span class="line-info" id="src-info">0 lines · 0 B</span>
     </div>
 
@@ -152,6 +157,8 @@ svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-l
   <!-- UNLOCK -->
   <div id="panel-unlock" style="display:none">
     <label>PGN or protected HTML page</label>
+    <label for="pgn-file" style="margin-top:10px">Or load a PGN file</label>
+    <input type="file" id="pgn-file" accept=".pgn,.txt,.html,.htm">
     <textarea id="pgn-in" rows="8" class="code" placeholder="Paste PGN chess notation here...&#10;&#10;[Event &quot;Secret&quot;]&#10;[Date &quot;...&quot;]&#10;...&#10;1. Rh5 Nb3 2. ..." ></textarea>
 
     <div class="pass-row">
