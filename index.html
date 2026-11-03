@@ -77,7 +77,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
   </header>
 
   <section class="hero">
-    <h1 data-i18n="headline">Keep your code on the board.<br>Keep it private.</h1>
+    <h1 data-i18n="headline">Keep your code on the board. Keep it private.</h1>
     <p data-i18n="intro">Protect code and documents, encode the encrypted data as chess notation, and unlock it whenever you need.</p>
   </section>
 
@@ -117,6 +117,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <div id="enc-result" style="display:none">
       <div class="out-hdr">
         <label class="field-label" for="pgn-out" data-i18n="encryptedPgn">Encrypted chess notation (PGN)</label>
+        <span id="pgn-meta" class="help"></span>
         <button class="btn-sm" id="pgn-copy-btn" type="button"><span id="pgn-copy" data-i18n="copy">Copy</span></button>
       </div>
       <textarea id="pgn-out" rows="7" readonly></textarea>
@@ -150,7 +151,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <div class="action-row"><button class="btn-primary" id="dec-btn" type="button"><span id="dec-label" data-i18n="decrypt">♙ Decrypt</span></button></div>
     <div class="busy-progress" id="dec-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="decrypting">Decrypting and verifying…</span></div>
     <div id="dec-result" style="display:none">
-      <div class="out-hdr"><label class="field-label" for="code-out" data-i18n="decryptedCode">Decrypted code</label><button class="btn-sm" id="dec-copy-btn" type="button"><span id="dec-copy" data-i18n="copy">Copy</span></button></div>
+      <div class="out-hdr"><label class="field-label" for="code-out" data-i18n="decryptedCode">Decrypted code</label><span id="dec-meta" class="help"></span><button class="btn-sm" id="dec-copy-btn" type="button"><span id="dec-copy" data-i18n="copy">Copy</span></button></div>
       <textarea id="code-out" rows="12" readonly class="plain"></textarea>
     </div>
     <div class="msg" id="dec-msg"></div>
