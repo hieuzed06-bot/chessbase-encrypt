@@ -113,18 +113,18 @@ async function doEncrypt(){
   if(new TextEncoder().encode(pw).length>1024){showMsg('enc-err','Password must not exceed 1,024 UTF-8 bytes.','err');return;}
   if(!pw.trim()){showMsg('enc-err','Password cannot contain only whitespace.','err');return;}
   if(!selectedFile&&!src.trim()){showMsg('enc-err','Choose a file or enter source text.','err');return;}
-  const sourceBytes=selectedFile?new Uint8Array(await selectedFile.arrayBuffer()):new TextEncoder().encode(src);
-  const payload=selectedFile?packFilePayload(selectedFile,sourceBytes):sourceBytes;
-  if(payload.length>MAX_SOURCE_BYTES){showMsg('enc-err','File or source exceeds the 1 MiB encrypted payload limit.','err');return;}
   setBusy('enc-btn',true,'');
   try{
+    const sourceBytes=selectedFile?new Uint8Array(await selectedFile.arrayBuffer()):new TextEncoder().encode(src);
+    const payload=selectedFile?packFilePayload(selectedFile,sourceBytes):sourceBytes;
+    if(payload.length>MAX_SOURCE_BYTES)throw new Error('File or source exceeds the 1 MiB encrypted payload limit.');
     const buf=await encryptRawBytes(payload,pw);
     lastEncrypted=buf;
     lastPGN=toPGN(buf);
     document.getElementById('pgn-out').value=lastPGN;
     document.getElementById('pgn-meta').textContent=buf.length+' moves · '+fmt(buf.length);
     document.getElementById('enc-result').style.display='block';
-    showMsg('enc-msg','✓ Encrypted. Copy PGN or download a self-decrypting page.','ok');
+    showMsg('enc-msg','✓ Encrypted. Download the .ccx file, PGN, or self-decrypting page.','ok');
   }catch(e){showMsg('enc-err',e.message,'err');}
   finally{setBusy('enc-btn',false,'🔐 Encrypt');}
 }
@@ -204,7 +204,7 @@ function clearDecMsg(){showMsg('dec-msg','','');}
 
 
 const FILE_PREFIX=new Uint8Array([67,67,88,70]);
-const ALLOWED_EXTENSIONS=new Set(['pdf','xls','xlsx','doc','docx','lua','luau','txt','js','mjs','cjs','sh','bash','cs','bat','cmd','ps1','py','json','csv','xml','html','css','sql','md']);
+const ALLOWED_EXTENSIONS=new Set(['pdf','xls','xlsx','xlsm','doc','docx','docm','lua','luau','txt','js','mjs','cjs','sh','bash','zsh','command','cs','bat','cmd','ps1','psm1','py','json','csv','xml','html','css','sql','md']);
 function packFilePayload(file,bytes){
   const name=file.name.split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f]/g,'').slice(0,180);
   const ext=(name.split('.').pop()||'').toLowerCase();
