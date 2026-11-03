@@ -122,8 +122,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
       </div>
       <textarea id="pgn-out" rows="7" readonly></textarea>
       <div class="action-row">
-        <button class="btn-secondary" id="dl-ccx-btn" type="button" data-i18n="downloadCcx">Download .ccx</button>
-        <button class="btn-secondary" id="dl-btn" type="button" data-i18n="downloadHtml">Download protected HTML</button>
+        <button class="btn-secondary" id="dl-txt-btn" type="button" data-i18n="downloadTxt">Download .txt</button>
         <button class="btn-sm" id="clear-enc-btn" type="button" data-i18n="clear">Clear</button>
       </div>
       <div class="msg" id="enc-msg"></div>
@@ -153,6 +152,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <div id="dec-result" style="display:none">
       <div class="out-hdr"><label class="field-label" for="code-out" data-i18n="decryptedCode">Decrypted code</label><span id="dec-meta" class="help"></span><button class="btn-sm" id="dec-copy-btn" type="button"><span id="dec-copy" data-i18n="copy">Copy</span></button></div>
       <textarea id="code-out" rows="12" readonly class="plain"></textarea>
+      <div class="action-row"><button class="btn-secondary" id="dec-download-txt-btn" type="button" data-i18n="downloadTxt">Download .txt</button></div>
     </div>
     <div class="msg" id="dec-msg"></div>
   </section>

@@ -1,83 +1,8 @@
 import { toPGN, fromPGN, MAX_SOURCE_BYTES, MAX_PGN_BYTES } from './codec.js';
 import { encryptBytes, decryptBytes, encryptRawBytes, decryptRawBytes } from './crypto-v3.js';
 
-// ── Self-decrypt page template ─────────────────────────
-function buildProtectedPage(pgn){
-  const nonceBytes=crypto.getRandomValues(new Uint8Array(16));
-  const nonce=btoa(String.fromCharCode(...nonceBytes));
-  // Cipher PGN alphabet cannot contain a backtick, so it is safe in this template literal.
-  return`<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-${nonce}'; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<meta name="referrer" content="no-referrer"><title>Protected Code — Chess Cipher</title>
-<style>
-*{box-sizing:border-box}body{margin:0;padding:28px 14px;background:#0d1117;color:#e6edf3;font:14px system-ui;display:grid;place-items:center;min-height:100vh}.card{width:100%;max-width:680px}h1{font-size:21px}p,.meta{color:#8b949e;font-size:12px;line-height:1.5}input,button,pre{width:100%;box-sizing:border-box;border-radius:8px;padding:11px;margin:6px 0;background:#161b22;color:#e6edf3;border:1px solid #30363d}button{background:#769656;border:0;font-weight:700;cursor:pointer}button:disabled{opacity:.5}pre{white-space:pre-wrap;overflow:auto;max-height:65vh}#out{display:none}.err{color:#f85149;min-height:18px}
-</style></head><body><main class="card"><h1>🔐 Protected Code</h1><p>CCX v3 · PBKDF2-SHA256 · HKDF · AES-256-GCM · Chess notation</p>
-<label for="pw">Password</label><input id="pw" type="password" autocomplete="current-password" placeholder="Enter password">
-<button id="btn">🔓 Unlock</button><div id="err" class="err"></div><section id="out"><p>Decrypted source code</p><pre id="code"></pre><button id="copy">Copy code</button><div id="meta" class="meta"></div></section></main>
-<script nonce="\${nonce}">
-'use strict';
-const PGN=\`${pgn}\`;
-const enc=new TextEncoder(), dec=new TextDecoder('utf-8',{fatal:true});
-const AAD=enc.encode('CodeLocker|CCX|3|PBKDF2-SHA256|1000000|AES-256-GCM|MOVE-CODEC-1');
-const P=['','N','B','R'],F='abcdefgh',R='12345678';
-function parse(pgn){
- if(enc.encode(pgn).length>8*1024*1024)throw Error('PGN exceeds 8 MiB.');
- const body=pgn.split(/\\r?\\n/).filter(l=>!/^\\s*\\[[A-Za-z][A-Za-z0-9_]*\\s+"[^"\\r\\n]*"\\]\\s*$/.test(l)).join(' ');
- const tokens=body.trim().split(/\\s+/).filter(Boolean),out=[];
- for(const t of tokens){if(/^\\d+\\.(?:\\.\\.)?$/.test(t)||['*','1-0','0-1','1/2-1/2'].includes(t))continue;
-  if(!/^(?:[NBR])?[a-h][1-8]$/.test(t))throw Error('Invalid chess-cipher token.');
-  const p=t.length===3?P.indexOf(t[0]):0, f=F.indexOf(t[t.length-2]), r=R.indexOf(t[t.length-1]);
-  if(p<0||f<0||r<0)throw Error('Invalid move token.');out.push((p<<6)|(f<<3)|r);
-  if(out.length>2*1024*1024+48)throw Error('Too many encrypted moves.');
- }
- if(!out.length)throw Error('No encrypted moves found.');
- return new Uint8Array(out);
-}
-async function deriveV3(password,salt){
- const base=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveBits']);
- const bits=await crypto.subtle.deriveBits({name:'PBKDF2',salt,iterations:1000000,hash:'SHA-256'},base,256);
- const hk=await crypto.subtle.importKey('raw',bits,'HKDF',false,['deriveKey']);
- return crypto.subtle.deriveKey({name:'HKDF',hash:'SHA-256',salt,info:enc.encode('CCX v3 AES-256-GCM')},hk,{name:'AES-GCM',length:256},false,['decrypt']);
-}
-async function decrypt(bytes,password){
- const isV3=bytes.length>=4&&bytes[0]===67&&bytes[1]===67&&bytes[2]===88&&bytes[3]===51;
- if(isV3){
-  if(bytes.length<304)throw Error('CCX v3 data is truncated.');
-  const key=await deriveV3(password,bytes.subarray(4,20));
-  const packed=new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(20,32),additionalData:AAD,tagLength:128},key,bytes.subarray(32)));
-  if(packed.length<256||packed.length>2*1024*1024||(packed.length&(packed.length-1))!==0)throw Error('Invalid padded payload.');
-  const n=new DataView(packed.buffer,packed.byteOffset,packed.byteLength).getUint32(0,false);
-  if(n>1024*1024||n>packed.length-4)throw Error('Invalid plaintext length.');
-  return packed.slice(4,4+n);
- }
- if(bytes.length<45)throw Error('Legacy data is truncated.');
- let recovered=null;
- for(const iterations of [600000,100000]){
-  try{const base=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
-   const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:bytes.subarray(0,16),iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
-   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(16,28)},key,bytes.subarray(28));
-   if(recovered===null)recovered=new Uint8Array(plain);
-  }catch{}
- }
- if(recovered!==null)return recovered;
- throw Error('Wrong password or damaged data.');
-}
-async function unlock(){
- const btn=document.getElementById('btn'),err=document.getElementById('err'),pw=document.getElementById('pw').value;
- err.textContent='';if(!pw){err.textContent='Password is required.';return;}
- btn.disabled=true;btn.textContent='Decrypting…';
- try{const plain=await decrypt(parse(PGN),pw);if(plain.length>=8&&plain[0]===67&&plain[1]===67&&plain[2]===88&&plain[3]===70){const n=new DataView(plain.buffer,plain.byteOffset,plain.byteLength).getUint32(4,false);if(n<2||n>1024||8+n>plain.length)throw Error('Invalid file metadata');const meta=JSON.parse(dec.decode(plain.subarray(8,8+n)));const name=String(meta.name||'download.bin').split(/[\\\\/]/).pop().replace(/[\\u0000-\\u001f\\u007f]/g,'').slice(0,180)||'download.bin';const type=typeof meta.type==='string'&&/^[a-z0-9.+-]+\\/[a-z0-9.+-]+$/i.test(meta.type)?meta.type:'application/octet-stream';const url=URL.createObjectURL(new Blob([plain.slice(8+n)],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);document.getElementById('meta').textContent='File downloaded: '+name;document.getElementById('out').style.display='block';}else{const code=dec.decode(plain);document.getElementById('code').textContent=code;document.getElementById('out').style.display='block';document.getElementById('meta').textContent=code.split('\\n').length+' lines · '+code.length+' characters';}btn.textContent='✓ Unlocked';}
- catch(e){err.textContent='Wrong password, corrupted data, or unsupported file.';btn.disabled=false;btn.textContent='🔓 Unlock';}
-}
-document.getElementById('btn').addEventListener('click',unlock);
-document.getElementById('pw').addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
-document.getElementById('copy').addEventListener('click',()=>navigator.clipboard.writeText(document.getElementById('code').textContent));
-<\/script></body></html>`;
-}
-
 // ── UI state ────────────────────────────────────────────
-let mode='protect', lastPGN='', lastEncrypted=null, selectedFile=null, selectedCipherFile=null;
+let mode='protect', lastPGN='', selectedFile=null, selectedCipherFile=null;
 
 function setMode(m){
   mode=m;
@@ -119,12 +44,11 @@ async function doEncrypt(){
     const payload=selectedFile?packFilePayload(selectedFile,sourceBytes):sourceBytes;
     if(payload.length>MAX_SOURCE_BYTES)throw new Error('File or source exceeds the 1 MiB encrypted payload limit.');
     const buf=await encryptRawBytes(payload,pw);
-    lastEncrypted=buf;
     lastPGN=toPGN(buf);
     document.getElementById('pgn-out').value=lastPGN;
     document.getElementById('pgn-meta').textContent=buf.length+' moves · '+fmt(buf.length);
     document.getElementById('enc-result').style.display='block';
-    showMsg('enc-msg','Encryption complete. Download the .ccx file, copy the PGN, or save the protected HTML page.','ok');showToast('Encryption completed successfully.');
+    showMsg('enc-msg','Encryption complete. Download the PGN as a .txt file or copy it.','ok');showToast('Encryption completed successfully.');
   }catch(e){showMsg('enc-err',e.message,'err');showToast(e.message,'error');}
   finally{setBusy('enc-btn',false,'🔐 Encrypt');}
 }
@@ -136,21 +60,16 @@ function copyPGN(){
   }).catch(()=>showToast('Could not access the clipboard.','error'));
 }
 
-function downloadEncrypted(){
-  if(!lastEncrypted)return;
-  downloadBytes(lastEncrypted,'protected-file.ccx','application/octet-stream');showToast('Encrypted .ccx file download started.');
+function downloadPGNText(){
+  if(!lastPGN)return;
+  downloadBytes(new TextEncoder().encode(lastPGN),'chesscrypt-encrypted.txt','text/plain;charset=utf-8');
+  showToast('Encrypted PGN .txt download started.');
 }
 
-function downloadPage(){
-  if(!lastPGN) return;
-  const html=buildProtectedPage(lastPGN);
-  const blob=new Blob([html],{type:'text/html'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='protected-code.html';
-  a.click();
-  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
-  showToast('Protected HTML page download started.');
+function downloadDecryptedText(){
+  const code=document.getElementById('code-out').value;
+  downloadBytes(new TextEncoder().encode(code),'chesscrypt-decrypted.txt','text/plain;charset=utf-8');
+  showToast('Decrypted .txt download started.');
 }
 
 function clearEnc(){
@@ -163,7 +82,7 @@ function clearEnc(){
   document.getElementById('enc-result').style.display='none';
   document.getElementById('src-info').textContent='0 lines · 0 B';
   showMsg('enc-err','','');showMsg('enc-msg','','');
-  lastPGN='';lastEncrypted=null;
+  lastPGN='';
   showToast('Workspace cleared.');
 }
 
@@ -285,8 +204,8 @@ document.getElementById('src').addEventListener('input',()=>{selectedFile=null;d
 document.getElementById('file-input').addEventListener('change',handleFileSelection);
 document.getElementById('enc-btn').addEventListener('click',doEncrypt);
 document.getElementById('pgn-copy-btn').addEventListener('click',copyPGN);
-document.getElementById('dl-btn').addEventListener('click',downloadPage);
-document.getElementById('dl-ccx-btn').addEventListener('click',downloadEncrypted);
+document.getElementById('dl-txt-btn').addEventListener('click',downloadPGNText);
+document.getElementById('dec-download-txt-btn').addEventListener('click',downloadDecryptedText);
 document.getElementById('clear-enc-btn').addEventListener('click',clearEnc);
 document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFile=null;document.getElementById('pgn-file').value='';document.getElementById('pgn-file-info').textContent='Supports .ccx, .pgn, .txt, and protected HTML';clearDecMsg();});
 document.getElementById('pgn-file').addEventListener('change',handleCipherFileSelection);
