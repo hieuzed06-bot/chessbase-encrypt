@@ -18,6 +18,11 @@ const translations = {
 };
 const messages = {
   "Passwords do not match.":"Mật khẩu xác nhận không khớp.",
+  "Encryption complete. Download the .ccx file, copy the PGN, or save the protected HTML page.":"Mã hoá hoàn tất. Hãy tải tệp .ccx, sao chép PGN hoặc lưu trang HTML bảo vệ.",
+  "Decryption complete. Authentication verified.":"Giải mã hoàn tất. Xác thực thành công.",
+  "File is too large (8 MiB maximum)":"Tệp quá lớn (tối đa 8 MiB).",
+  "Could not read encrypted data from this HTML file.":"Không thể đọc dữ liệu đã mã hoá từ tệp HTML này.",
+  "Protected HTML page download started.":"Đã bắt đầu tải trang HTML bảo vệ.",
   "Password must be at least 16 characters.":"Mật khẩu phải có ít nhất 16 ký tự.",
   "Password is too long.":"Mật khẩu quá dài.",
   "Password cannot contain only whitespace.":"Mật khẩu không được chỉ chứa khoảng trắng.",
