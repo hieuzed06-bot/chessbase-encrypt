@@ -108,11 +108,11 @@ async function doEncrypt(){
   const pw=document.getElementById('pass-enc').value;
   const confirmPw=document.getElementById('pass-confirm').value;
   showMsg('enc-err','','');
-  if(pw!==confirmPw){showMsg('enc-err','Passwords do not match.','err');return;}
-  if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');return;}
-  if(new TextEncoder().encode(pw).length>1024){showMsg('enc-err','Password must not exceed 1,024 UTF-8 bytes.','err');return;}
-  if(!pw.trim()){showMsg('enc-err','Password cannot contain only whitespace.','err');return;}
-  if(!selectedFile&&!src.trim()){showMsg('enc-err','Choose a file or enter source text.','err');return;}
+  if(pw!==confirmPw){showMsg('enc-err','Passwords do not match.','err');showToast('Passwords do not match.','error');return;}
+  if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');showToast('Password must be at least 16 characters.','error');return;}
+  if(new TextEncoder().encode(pw).length>1024){showMsg('enc-err','Password must not exceed 1,024 UTF-8 bytes.','err');showToast('Password is too long.','error');return;}
+  if(!pw.trim()){showMsg('enc-err','Password cannot contain only whitespace.','err');showToast('Password cannot contain only whitespace.','error');return;}
+  if(!selectedFile&&!src.trim()){showMsg('enc-err','Choose a file or enter source text.','err');showToast('Choose a file or enter source text first.','error');return;}
   setBusy('enc-btn',true,'');
   try{
     const sourceBytes=selectedFile?new Uint8Array(await selectedFile.arrayBuffer()):new TextEncoder().encode(src);
@@ -124,21 +124,21 @@ async function doEncrypt(){
     document.getElementById('pgn-out').value=lastPGN;
     document.getElementById('pgn-meta').textContent=buf.length+' moves · '+fmt(buf.length);
     document.getElementById('enc-result').style.display='block';
-    showMsg('enc-msg','✓ Encrypted. Download the .ccx file, PGN, or self-decrypting page.','ok');
-  }catch(e){showMsg('enc-err',e.message,'err');}
+    showMsg('enc-msg','Encryption complete. Download the .ccx file, copy the PGN, or save the protected HTML page.','ok');showToast('Encryption completed successfully.');
+  }catch(e){showMsg('enc-err',e.message,'err');showToast(e.message,'error');}
   finally{setBusy('enc-btn',false,'🔐 Encrypt');}
 }
 
 function copyPGN(){
-  navigator.clipboard.writeText(lastPGN).then(()=>{
+  navigator.clipboard.writeText(lastPGN).then(()=>{showToast('Encrypted PGN copied to clipboard.');
     const t=document.getElementById('pgn-copy');
     t.textContent='Copied!';setTimeout(()=>t.textContent='Copy',1800);
-  });
+  }).catch(()=>showToast('Could not access the clipboard.','error'));
 }
 
 function downloadEncrypted(){
   if(!lastEncrypted)return;
-  downloadBytes(lastEncrypted,'protected-file.ccx','application/octet-stream');
+  downloadBytes(lastEncrypted,'protected-file.ccx','application/octet-stream');showToast('Encrypted .ccx file download started.');
 }
 
 function downloadPage(){
@@ -150,6 +150,7 @@ function downloadPage(){
   a.download='protected-code.html';
   a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  showToast('Protected HTML page download started.');
 }
 
 function clearEnc(){
@@ -163,6 +164,7 @@ function clearEnc(){
   document.getElementById('src-info').textContent='0 lines · 0 B';
   showMsg('enc-err','','');showMsg('enc-msg','','');
   lastPGN='';lastEncrypted=null;
+  showToast('Workspace cleared.');
 }
 
 // ── Unlock ───────────────────────────────────────────────
@@ -170,13 +172,13 @@ async function doDecrypt(){
   let pgn=document.getElementById('pgn-in').value.trim();
   const pw=document.getElementById('pass-dec').value;
   showMsg('dec-msg','','');
-  if(!pw){showMsg('dec-msg','Password is required.','err');return;}
-  if(!pgn&&!selectedCipherFile){showMsg('dec-msg','Choose a .ccx file or paste PGN to unlock.','err');return;}
-  if(pgn&&new TextEncoder().encode(pgn).length>MAX_PGN_BYTES){showMsg('dec-msg','PGN exceeds the 2 MiB limit.','err');return;}
+  if(!pw){showMsg('dec-msg','Password is required.','err');showToast('Enter your password to continue.','error');return;}
+  if(!pgn&&!selectedCipherFile){showMsg('dec-msg','Choose a .ccx file or paste PGN to unlock.','err');showToast('Choose an encrypted file or paste PGN first.','error');return;}
+  if(pgn&&new TextEncoder().encode(pgn).length>MAX_PGN_BYTES){showMsg('dec-msg','PGN exceeds the 8 MiB limit.','err');showToast('PGN exceeds the 8 MiB limit.','error');return;}
   // Accept protected HTML — extract PGN from template literal
   if(pgn.startsWith('<!DOCTYPE')||pgn.startsWith('<html')){
     const m=pgn.match(/const PGN=`([\s\S]*?)`;/);
-    if(!m){showMsg('dec-msg','Could not extract PGN from HTML file.','err');return;}
+    if(!m){showMsg('dec-msg','Could not extract PGN from HTML file.','err');showToast('Could not read encrypted data from this HTML file.','error');return;}
     pgn=m[1].replace(/\\`/g,'`').replace(/\\\\/g,'\\');
   }
   setBusy('dec-btn',true,'');
@@ -184,20 +186,20 @@ async function doDecrypt(){
     const buf=selectedCipherFile?new Uint8Array(await selectedCipherFile.arrayBuffer()):fromPGN(pgn);
     const plain=await decryptRawBytes(buf,pw);
     const file=parseFilePayload(plain);
-    if(file){downloadBytes(file.bytes,file.name,file.type);document.getElementById('dec-result').style.display='none';showMsg('dec-msg','✓ File decrypted and download started: '+file.name,'ok');}
-    else{const code=new TextDecoder('utf-8',{fatal:true}).decode(plain);document.getElementById('code-out').value=code;document.getElementById('dec-result').style.display='block';const lines=code.split('\n').length;document.getElementById('dec-meta').textContent=lines+' lines · '+code.length+' chars';showMsg('dec-msg','✓ Decrypted — authentication verified.','ok');}
+    if(file){downloadBytes(file.bytes,file.name,file.type);document.getElementById('dec-result').style.display='none';showMsg('dec-msg','File decrypted. Download started: '+file.name,'ok');showToast('File decrypted successfully. Download started.');}
+    else{const code=new TextDecoder('utf-8',{fatal:true}).decode(plain);document.getElementById('code-out').value=code;document.getElementById('dec-result').style.display='block';const lines=code.split('\n').length;document.getElementById('dec-meta').textContent=lines+' lines · '+code.length+' chars';showMsg('dec-msg','Decryption complete. Authentication verified.','ok');showToast('Decryption completed successfully.');}
   }catch(e){
     document.getElementById('dec-result').style.display='none';
-    showMsg('dec-msg',e.message,'err');
+    showMsg('dec-msg',e.message,'err');showToast(e.message,'error');
   }
   finally{setBusy('dec-btn',false,'🔓 Decrypt');}
 }
 
 function copyDecCode(){
-  navigator.clipboard.writeText(document.getElementById('code-out').value).then(()=>{
+  navigator.clipboard.writeText(document.getElementById('code-out').value).then(()=>{showToast('Decrypted text copied to clipboard.');
     const t=document.getElementById('dec-copy');
     t.textContent='Copied!';setTimeout(()=>t.textContent='Copy',1800);
-  });
+  }).catch(()=>showToast('Could not access the clipboard.','error'));
 }
 
 function clearDecMsg(){showMsg('dec-msg','','');}
@@ -233,6 +235,7 @@ async function handleFileSelection(){
   document.getElementById('file-info').textContent=file?file.name+' · '+fmt(file.size):'No file selected';
   if(file)document.getElementById('src').value='';
   updateSrcInfo();
+  if(file)showToast('File selected: '+file.name);
 }
 
 async function handleCipherFileSelection(){
@@ -240,17 +243,32 @@ async function handleCipherFileSelection(){
   const info=document.getElementById('pgn-file-info');
   selectedCipherFile=null;
   document.getElementById('pgn-in').value='';
-  if(!file){info.textContent='Hỗ trợ .ccx, .pgn, .txt và HTML đã bảo vệ';return;}
+  if(!file){info.textContent='Supports .ccx, .pgn, .txt, and protected HTML';return;}
   info.textContent=file.name+' · '+fmt(file.size);
+  showToast('Selected: '+file.name);
   const ext=(file.name.split('.').pop()||'').toLowerCase();
   if(ext==='ccx'){
     selectedCipherFile=file;
   }else{
-    if(file.size>MAX_PGN_BYTES){info.textContent='File quá lớn (tối đa 8 MiB)';showMsg('dec-msg','PGN/HTML exceeds the 8 MiB limit.','err');return;}
+    if(file.size>MAX_PGN_BYTES){info.textContent='File is too large (8 MiB maximum)';showMsg('dec-msg','PGN/HTML exceeds the 8 MiB limit.','err');return;}
     document.getElementById('pgn-in').value=await file.text();
     selectedCipherFile=null;
   }
   clearDecMsg();
+}
+
+let toastTimer=null;
+function showToast(message,type='success'){
+  const toast=document.getElementById('toast');
+  const text=document.getElementById('toast-text');
+  const icon=document.getElementById('toast-icon');
+  if(!toast||!text||!icon)return;
+  text.textContent=String(message);
+  toast.classList.toggle('error',type==='error');
+  icon.textContent=type==='error'?'!':'✓';
+  toast.classList.add('show');
+  if(toastTimer)clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove('show'),3200);
 }
 
 // ── Utils ────────────────────────────────────────────────
