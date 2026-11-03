@@ -15,7 +15,7 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(-
 #panel-protect,#panel-unlock{padding:clamp(18px,4vw,30px);border:1px solid var(--line);border-radius:24px;background:linear-gradient(145deg,rgba(19,30,50,.97),rgba(13,22,38,.97));box-shadow:0 24px 80px rgba(0,0,0,.28)}
 label{display:block;margin-bottom:8px;color:#c2cfe3;font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase}.file-picker-wrap{margin:12px 0 22px;padding:16px;border:1px dashed rgba(139,156,255,.4);border-radius:16px;background:rgba(94,117,220,.06)}.file-input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}.file-picker{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 16px;border:1px solid rgba(139,156,255,.42);border-radius:11px;background:linear-gradient(135deg,rgba(106,127,255,.24),rgba(66,191,214,.13));color:#e8edff;font-size:13px;font-weight:750;letter-spacing:0;text-transform:none;cursor:pointer}.file-picker:hover,.file-input:focus-visible+.file-picker{border-color:var(--cyan);box-shadow:0 8px 24px rgba(83,126,235,.16)}.file-picker.secondary{border-color:rgba(100,215,232,.35);background:rgba(57,172,194,.12);color:#b8f1f5}.pass-note{margin-top:8px;color:#7184a1;font-size:11px;line-height:1.5}
 .code-wrap{position:relative}.line-info{position:absolute;top:12px;right:13px;color:#7184a1;font:11px var(--mono);pointer-events:none}textarea{display:block;width:100%;min-height:150px;padding:16px;border:1px solid var(--line);border-radius:14px;background:rgba(6,12,23,.7);color:var(--text);resize:vertical;outline:none;line-height:1.7;font-size:13px}textarea.code,textarea[readonly].plain{font-family:var(--mono);font-size:12.5px}textarea:focus,.pass-wrap input:focus{border-color:rgba(139,156,255,.75);box-shadow:0 0 0 3px rgba(108,129,255,.12)}textarea::placeholder,.pass-wrap input::placeholder{color:#5f718d}textarea[readonly]{background:rgba(8,15,28,.8);color:#c7d4e9}
-.pass-row{display:flex;gap:14px;align-items:flex-end;margin:20px 0}.pass-wrap{flex:1;min-width:0}.pass-wrap input{width:100%;min-height:45px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:rgba(6,12,23,.72);color:var(--text);font-size:13px;outline:none}
+.pass-row{display:flex;gap:14px;align-items:flex-end;margin:20px 0}.pass-wrap{flex:1;min-width:0}.pass-wrap input{width:100%;min-height:45px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;background:rgba(6,12,23,.72);color:var(--text);font-size:13px;outline:none}.pass-field{position:relative}.pass-field input{padding-right:124px}.pass-field .btn-primary{position:absolute;right:4px;bottom:4px;min-height:37px;padding:8px 13px;font-size:12px;box-shadow:none}
 .btn-primary,.btn-download,.btn-sm{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:11px;font-weight:750;cursor:pointer;transition:transform .18s,filter .18s}.btn-primary{min-height:45px;padding:11px 19px;border:1px solid rgba(174,187,255,.35);background:linear-gradient(135deg,#7589ff,#586fe5);color:white;font-size:13px;box-shadow:0 8px 24px rgba(80,103,230,.22);white-space:nowrap}.btn-primary:hover:not(:disabled),.btn-download:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.1)}.btn-primary:disabled,.btn-download:disabled{opacity:.5;cursor:not-allowed}.btn-download{min-height:40px;padding:9px 14px;border:1px solid rgba(100,215,232,.3);background:rgba(58,166,190,.1);color:#b9f2f4;font-size:12px}.btn-sm{min-height:32px;padding:6px 10px;border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted);font-size:11px}.btn-sm:hover{border-color:rgba(139,156,255,.5);color:white}
 .action-row{display:flex;gap:9px;flex-wrap:wrap;margin:16px 0 0}.out-hdr{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:24px 0 8px}.out-hdr label{margin:0}.msg{min-height:16px;margin-top:9px;font-size:12px;line-height:1.5}.msg.err{color:var(--red)}.msg.ok{color:var(--green)}.msg.warn{color:#ffd27a}.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.25);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}code{font-family:var(--mono);font-size:11px;background:#1d2b43;border:1px solid var(--line);padding:2px 5px;border-radius:5px;color:#b5c4ff}svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .toast{position:fixed;z-index:50;top:20px;left:50%;display:flex;align-items:center;gap:11px;max-width:calc(100vw - 28px);width:max-content;padding:13px 17px;border:1px solid rgba(66,214,160,.28);border-radius:14px;background:rgba(17,32,43,.97);color:#eafff6;box-shadow:0 16px 50px rgba(0,0,0,.38);font-size:13px;font-weight:650;opacity:0;pointer-events:none;transform:translate(-50%,-12px);transition:opacity .22s,transform .22s;backdrop-filter:blur(16px)}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.error{border-color:rgba(255,120,135,.38);background:rgba(47,23,34,.98);color:#ffe8ec}.toast-icon{display:grid;place-items:center;width:23px;height:23px;border-radius:50%;background:rgba(66,214,160,.14);color:var(--green)}.toast.error .toast-icon{background:rgba(255,120,135,.14);color:var(--red)}
@@ -58,12 +58,12 @@ label{display:block;margin-bottom:8px;color:#c2cfe3;font-size:11px;font-weight:8
     <div class="pass-row">
       <div class="pass-wrap">
         <label>Password</label>
-        <input type="password" id="pass-enc" placeholder="Required — encryption refused if empty">
+        <div class="pass-field">
+          <input type="password" id="pass-enc" placeholder="Required — encryption refused if empty">
+          <button class="btn-primary" id="enc-btn" type="button"><span id="enc-label">🔐 Encrypt</span></button>
+        </div>
         <div class="pass-note">Use at least 16 characters. A long passphrase is recommended.</div>
       </div>
-      <button class="btn-primary" id="enc-btn" >
-        <span id="enc-label">🔐 Encrypt</span>
-      </button>
     </div>
     <div class="pass-row" style="margin-top:0">
       <div class="pass-wrap">
@@ -114,12 +114,12 @@ label{display:block;margin-bottom:8px;color:#c2cfe3;font-size:11px;font-weight:8
     <div class="pass-row">
       <div class="pass-wrap">
         <label>Password</label>
-        <input type="password" id="pass-dec" placeholder="Enter decryption password">
+        <div class="pass-field">
+          <input type="password" id="pass-dec" placeholder="Enter decryption password">
+          <button class="btn-primary" id="dec-btn" type="button"><span id="dec-label">🔓 Decrypt</span></button>
+        </div>
         <div class="pass-note">Wrong password → decryption fails with authentication error.</div>
       </div>
-      <button class="btn-primary" id="dec-btn" >
-        <span id="dec-label">🔓 Decrypt</span>
-      </button>
     </div>
 
     <div id="dec-result" style="display:none">
