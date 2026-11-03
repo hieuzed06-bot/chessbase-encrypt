@@ -77,7 +77,7 @@ document.getElementById('copy').addEventListener('click',()=>navigator.clipboard
 }
 
 // ── UI state ────────────────────────────────────────────
-let mode='protect', lastPGN='', selectedFile=null;
+let mode='protect', lastPGN='', lastEncrypted=null, selectedFile=null, selectedCipherFile=null;
 
 function setMode(m){
   mode=m;
@@ -119,6 +119,7 @@ async function doEncrypt(){
   setBusy('enc-btn',true,'');
   try{
     const buf=await encryptRawBytes(payload,pw);
+    lastEncrypted=buf;
     lastPGN=toPGN(buf);
     document.getElementById('pgn-out').value=lastPGN;
     document.getElementById('pgn-meta').textContent=buf.length+' moves · '+fmt(buf.length);
@@ -133,6 +134,11 @@ function copyPGN(){
     const t=document.getElementById('pgn-copy');
     t.textContent='Copied!';setTimeout(()=>t.textContent='Copy',1800);
   });
+}
+
+function downloadEncrypted(){
+  if(!lastEncrypted)return;
+  downloadBytes(lastEncrypted,'protected-file.ccx','application/octet-stream');
 }
 
 function downloadPage(){
@@ -156,7 +162,7 @@ function clearEnc(){
   document.getElementById('enc-result').style.display='none';
   document.getElementById('src-info').textContent='0 lines · 0 B';
   showMsg('enc-err','','');showMsg('enc-msg','','');
-  lastPGN='';
+  lastPGN='';lastEncrypted=null;
 }
 
 // ── Unlock ───────────────────────────────────────────────
@@ -165,8 +171,8 @@ async function doDecrypt(){
   const pw=document.getElementById('pass-dec').value;
   showMsg('dec-msg','','');
   if(!pw){showMsg('dec-msg','Password is required.','err');return;}
-  if(!pgn){showMsg('dec-msg','Paste PGN to unlock.','err');return;}
-  if(new TextEncoder().encode(pgn).length>MAX_PGN_BYTES){showMsg('dec-msg','PGN exceeds the 2 MiB limit.','err');return;}
+  if(!pgn&&!selectedCipherFile){showMsg('dec-msg','Choose a .ccx file or paste PGN to unlock.','err');return;}
+  if(pgn&&new TextEncoder().encode(pgn).length>MAX_PGN_BYTES){showMsg('dec-msg','PGN exceeds the 2 MiB limit.','err');return;}
   // Accept protected HTML — extract PGN from template literal
   if(pgn.startsWith('<!DOCTYPE')||pgn.startsWith('<html')){
     const m=pgn.match(/const PGN=`([\s\S]*?)`;/);
@@ -175,7 +181,7 @@ async function doDecrypt(){
   }
   setBusy('dec-btn',true,'');
   try{
-    const buf=fromPGN(pgn);
+    const buf=selectedCipherFile?new Uint8Array(await selectedCipherFile.arrayBuffer()):fromPGN(pgn);
     const plain=await decryptRawBytes(buf,pw);
     const file=parseFilePayload(plain);
     if(file){downloadBytes(file.bytes,file.name,file.type);document.getElementById('dec-result').style.display='none';showMsg('dec-msg','✓ File decrypted and download started: '+file.name,'ok');}
@@ -244,7 +250,8 @@ document.getElementById('file-input').addEventListener('change',handleFileSelect
 document.getElementById('enc-btn').addEventListener('click',doEncrypt);
 document.getElementById('pgn-copy-btn').addEventListener('click',copyPGN);
 document.getElementById('dl-btn').addEventListener('click',downloadPage);
+document.getElementById('dl-ccx-btn').addEventListener('click',downloadEncrypted);
 document.getElementById('clear-enc-btn').addEventListener('click',clearEnc);
-document.getElementById('pgn-in').addEventListener('input',clearDecMsg);
+document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFile=null;document.getElementById('pgn-file').value='';clearDecMsg();});
 document.getElementById('dec-btn').addEventListener('click',doDecrypt);
 document.getElementById('dec-copy-btn').addEventListener('click',copyDecCode);
