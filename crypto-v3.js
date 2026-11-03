@@ -68,13 +68,13 @@ function unpackAndValidate(packed) {
   if (length > MAX_SOURCE_BYTES || length > packed.length - 4) {
     throw new Error('Invalid CCX v3 plaintext length.');
   }
-  return TD.decode(packed.subarray(4, 4 + length));
+  return packed.slice(4, 4 + length);
 }
 
-export async function encryptBytes(text, password) {
+export async function encryptRawBytes(plain, password) {
   const passwordError = validateEncryptionPassword(password);
   if (passwordError) throw new Error(passwordError);
-  const plain = TE.encode(text);
+  if (!(plain instanceof Uint8Array)) throw new TypeError('Expected plaintext bytes.');
   if (plain.length > MAX_SOURCE_BYTES) throw new Error('Source exceeds the 1 MiB limit.');
   const salt = randomBytes(16);
   const iv = randomBytes(12);
@@ -125,11 +125,20 @@ async function decryptLegacy(buffer, password) {
   throw new Error('Decryption failed — wrong password or data was tampered with.');
 }
 
-export async function decryptBytes(buffer, password) {
+export async function decryptRawBytes(buffer, password) {
   if (!(buffer instanceof Uint8Array)) throw new TypeError('Expected encrypted bytes.');
   if (typeof password !== 'string' || !password.length) throw new Error('Password is required.');
   const isV3 = buffer.length >= 4 && MAGIC.every((byte, i) => buffer[i] === byte);
   return isV3 ? decryptV3(buffer, password) : decryptLegacy(buffer, password);
+}
+
+export async function encryptBytes(text, password) {
+  if (typeof text !== 'string') throw new TypeError('Expected text.');
+  return encryptRawBytes(TE.encode(text), password);
+}
+
+export async function decryptBytes(buffer, password) {
+  return TD.decode(await decryptRawBytes(buffer, password));
 }
 
 export const CCX_V3_ITERATIONS = ITERATIONS;
