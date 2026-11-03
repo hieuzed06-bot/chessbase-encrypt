@@ -121,7 +121,7 @@ async function decryptLegacy(buffer, password) {
       if (recovered === null) recovered = new Uint8Array(plain);
     } catch {}
   }
-  if (recovered !== null) return TD.decode(recovered);
+  if (recovered !== null) return recovered;
   throw new Error('Decryption failed — wrong password or data was tampered with.');
 }
 
