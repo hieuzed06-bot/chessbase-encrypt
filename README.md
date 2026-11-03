@@ -12,7 +12,8 @@
 |---|---|
 | 🔒 **Protect tab** | paste code + password → get PGN / self-decrypting HTML |
 | 🔓 **Unlock tab** | paste PGN (or protected HTML) + password → get code back |
-| 🌐 **Any language** | JS, Python, C, SQL… everything is UTF-8 bytes first |
+| 📁 **File support** | PDF, Excel, Word, Lua/Luau, TXT, JS, SH, C#, PowerShell and terminal scripts |
+| 🌐 **Any language** | Paste text or upload supported files; binary documents are encrypted as raw bytes |
 
 ---
 
@@ -20,13 +21,11 @@
 
 ![Encryption pipeline](https://github.com/hieuzed06-bot/script/blob/main/image/encryption-flow.png)
 
-1. **Open `Code Locker — Chess Cipher v2.html`** in any modern browser. Stay on the **🔒 Protect code** tab.
-2. **Paste your source code** into the *Source code* box — the counter shows lines and size.
-3. **Enter a password of at least 16 characters**, then confirm it. A long, unique passphrase is recommended. ⚠️ There is **no password recovery** — lose it and the data is gone.
-4. **Click `🔐 Encrypt`.** The tool runs PBKDF2 → HKDF → AES-256-GCM → random padding → chess encoding and shows the **PGN output**.
-5. **Share it** two ways:
-   - **Copy** the PGN text and paste it anywhere (chat, email, README…), or
-   - **Download protected page** — a single `protected-code.html` that decrypts itself in the recipient's browser.
+1. **Open Code Locker** in a modern browser and stay on **🔒 Protect code**.
+2. **Paste text/terminal commands**, or choose a supported file: `.pdf`, `.xls`, `.xlsx`, `.xlsm`, `.doc`, `.docx`, `.docm`, `.lua`, `.luau`, `.txt`, `.js`, `.sh`, `.bash`, `.zsh`, `.cs`, `.bat`, `.cmd`, `.ps1`, and common text formats.
+3. Files are encrypted byte-for-byte, so PDF/Office documents are not converted to text. The encrypted payload limit is **1 MiB**.
+4. Enter a password of at least 16 characters and confirm it. ⚠️ There is **no password recovery**.
+5. Click **Encrypt**, then download a binary `.ccx` file, copy the PGN, or download a self-decrypting HTML page.
 
 Every encryption uses a **fresh random salt + IV**, so encrypting the same code twice gives two completely different chess games.
 
@@ -61,10 +60,10 @@ Every byte (0–255) maps to a chess move via 4 piece groups × 8 files × 8 ran
 
 You received a `protected-code.html` file or a PGN snippet. Here's how to unlock it:
 
-1. **Open the file** — double-click `protected-code.html`. It opens in any modern browser (Chrome, Firefox, Safari, Edge). No internet needed. *Or* open the tool's **🔓 Unlock** tab and paste the PGN.
-2. **Enter the password** — the one the sender shared with you privately. There is no fallback key: an empty password is refused.
-3. **Click `🔓 Unlock`.** The versioned decryptor derives the key, verifies the GCM authentication tag, and removes random padding. Older v2 files are still supported.
-4. **See the code** — it appears in the panel. Hit **Copy code** to grab it.
+1. Open a `.ccx` file, paste PGN, or open a protected HTML page. In the tool, the **Unlock** tab accepts `.ccx`, PGN, and protected HTML.
+2. Enter the password shared privately by the sender.
+3. Click **Unlock**. The tool authenticates and decrypts the payload.
+4. Encrypted files are downloaded in their original format and filename. Decrypted text is shown in the output panel.
 
 > ⚠️ Wrong password → `Decryption failed — wrong password or data was tampered with.` The GCM auth tag catches both.
 
@@ -148,7 +147,7 @@ New encrypted byte streams begin with the `CCX3` magic marker, followed by a 16-
 
 ## Input limits and validation
 
-- Source code is limited to 1 MiB (UTF-8).
+- Text and uploaded file payloads are limited to 1 MiB after encrypted file metadata is added. Binary files are preserved byte-for-byte.
 - PGN input is limited to 8 MiB and accepts only the chess-cipher move format, PGN move numbers, headers, and result markers. SAN moves, comments, variations, and malformed tokens are rejected.
 - Run `npm test` locally; GitHub Actions runs the same codec test suite for pushes and pull requests.
 - The main app loads JavaScript from `app.js` under a `script-src 'self'` policy. Downloaded protected pages use a fresh per-page CSP nonce for their embedded decryptor.
