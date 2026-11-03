@@ -235,6 +235,24 @@ async function handleFileSelection(){
   updateSrcInfo();
 }
 
+async function handleCipherFileSelection(){
+  const file=document.getElementById('pgn-file').files[0];
+  const info=document.getElementById('pgn-file-info');
+  selectedCipherFile=null;
+  document.getElementById('pgn-in').value='';
+  if(!file){info.textContent='Hỗ trợ .ccx, .pgn, .txt và HTML đã bảo vệ';return;}
+  info.textContent=file.name+' · '+fmt(file.size);
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(ext==='ccx'){
+    selectedCipherFile=file;
+  }else{
+    if(file.size>MAX_PGN_BYTES){info.textContent='File quá lớn (tối đa 8 MiB)';showMsg('dec-msg','PGN/HTML exceeds the 8 MiB limit.','err');return;}
+    document.getElementById('pgn-in').value=await file.text();
+    selectedCipherFile=null;
+  }
+  clearDecMsg();
+}
+
 // ── Utils ────────────────────────────────────────────────
 function showMsg(id,text,cls){
   const el=document.getElementById(id);
@@ -252,6 +270,7 @@ document.getElementById('pgn-copy-btn').addEventListener('click',copyPGN);
 document.getElementById('dl-btn').addEventListener('click',downloadPage);
 document.getElementById('dl-ccx-btn').addEventListener('click',downloadEncrypted);
 document.getElementById('clear-enc-btn').addEventListener('click',clearEnc);
-document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFile=null;document.getElementById('pgn-file').value='';clearDecMsg();});
+document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFile=null;document.getElementById('pgn-file').value='';document.getElementById('pgn-file-info').textContent='Hỗ trợ .ccx, .pgn, .txt và HTML đã bảo vệ';clearDecMsg();});
+document.getElementById('pgn-file').addEventListener('change',handleCipherFileSelection);
 document.getElementById('dec-btn').addEventListener('click',doDecrypt);
 document.getElementById('dec-copy-btn').addEventListener('click',copyDecCode);
