@@ -16,6 +16,12 @@ Include the affected file or feature, reproduction steps, impact, and any sugges
 - Decryption remains compatible with v2 files (PBKDF2-SHA-256, 600,000 iterations) and legacy files (100,000 iterations). Both legacy KDF attempts are performed before returning, avoiding an early-success timing distinction between formats.
 - PBKDF2 is not memory-hard like Argon2id. This implementation intentionally uses browser-native Web Crypto to remain self-contained and offline-capable; do not claim Argon2id protection. A future Argon2id migration should bundle and audit a maintained implementation.
 
+## File handling
+
+- Uploaded PDF, Office, source-code, and terminal-script files are encrypted as raw bytes; file names and MIME labels are stored inside the authenticated encrypted payload.
+- The current browser UI accepts an explicit extension allowlist and limits the complete payload (including metadata) to 1 MiB. The extension allowlist is a usability filter, not a security boundary or file-type validation mechanism.
+- Decryption never executes source code or terminal commands. It only restores the original bytes and initiates a browser download.
+
 ## Safe use
 
 - New encryptions enforce a minimum of 16 Unicode characters and a maximum of 1,024 UTF-8 bytes; the UI also requires password confirmation. Decryption remains backward-compatible with existing shorter passwords.
