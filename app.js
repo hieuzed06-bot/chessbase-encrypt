@@ -49,22 +49,25 @@ async function decrypt(bytes,password){
   if(packed.length<256||packed.length>2*1024*1024||(packed.length&(packed.length-1))!==0)throw Error('Invalid padded payload.');
   const n=new DataView(packed.buffer,packed.byteOffset,packed.byteLength).getUint32(0,false);
   if(n>1024*1024||n>packed.length-4)throw Error('Invalid plaintext length.');
-  return dec.decode(packed.subarray(4,4+n));
+  return packed.slice(4,4+n);
  }
  if(bytes.length<45)throw Error('Legacy data is truncated.');
+ let recovered=null;
  for(const iterations of [600000,100000]){
   try{const base=await crypto.subtle.importKey('raw',enc.encode(password),'PBKDF2',false,['deriveKey']);
    const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:bytes.subarray(0,16),iterations,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['decrypt']);
-   return dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(16,28)},key,bytes.subarray(28)));
+   const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.subarray(16,28)},key,bytes.subarray(28));
+   if(recovered===null)recovered=new Uint8Array(plain);
   }catch{}
  }
+ if(recovered!==null)return recovered;
  throw Error('Wrong password or damaged data.');
 }
 async function unlock(){
  const btn=document.getElementById('btn'),err=document.getElementById('err'),pw=document.getElementById('pw').value;
  err.textContent='';if(!pw){err.textContent='Password is required.';return;}
  btn.disabled=true;btn.textContent='Decrypting…';
- try{const code=await decrypt(parse(PGN),pw);document.getElementById('code').textContent=code;document.getElementById('out').style.display='block';document.getElementById('meta').textContent=code.split('\\n').length+' lines · '+code.length+' characters';btn.textContent='✓ Unlocked';}
+ try{const plain=await decrypt(parse(PGN),pw);if(plain.length>=8&&plain[0]===67&&plain[1]===67&&plain[2]===88&&plain[3]===70){const n=new DataView(plain.buffer,plain.byteOffset,plain.byteLength).getUint32(4,false);if(n<2||n>1024||8+n>plain.length)throw Error('Invalid file metadata');const meta=JSON.parse(dec.decode(plain.subarray(8,8+n)));const name=String(meta.name||'download.bin').split(/[\\\\/]/).pop().replace(/[\\u0000-\\u001f\\u007f]/g,'').slice(0,180)||'download.bin';const type=typeof meta.type==='string'&&/^[a-z0-9.+-]+\\/[a-z0-9.+-]+$/i.test(meta.type)?meta.type:'application/octet-stream';const url=URL.createObjectURL(new Blob([plain.slice(8+n)],{type}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);document.getElementById('meta').textContent='File downloaded: '+name;document.getElementById('out').style.display='block';}else{const code=dec.decode(plain);document.getElementById('code').textContent=code;document.getElementById('out').style.display='block';document.getElementById('meta').textContent=code.split('\\n').length+' lines · '+code.length+' characters';}btn.textContent='✓ Unlocked';}
  catch(e){err.textContent='Wrong password, corrupted data, or unsupported file.';btn.disabled=false;btn.textContent='🔓 Unlock';}
 }
 document.getElementById('btn').addEventListener('click',unlock);
