@@ -35,3 +35,8 @@ Include the affected file or feature, reproduction steps, impact, and any sugges
 ## Additional browser-side hardening
 
 The main application JavaScript is served as a same-origin module and the main page CSP no longer permits inline scripts or event-handler attributes. Generated protected HTML uses a cryptographically random per-file nonce for its embedded decryptor. Source and PGN inputs are size-bounded, and the PGN parser rejects tokens outside the cipher's exact move alphabet. These controls reduce attack surface but do not make untrusted downloaded HTML safe to execute; only open protected pages from sources you trust.
+
+
+## Optional Mate secret
+
+The optional Mate field is serialized as a versioned binary wrapper inside the plaintext passed to the existing authenticated AES-GCM encryption routine. It is therefore encrypted and authenticated together with the primary content; it is not stored beside the ciphertext. The Mate value is limited to 4 KiB and the combined payload to 1 MiB. Files without this wrapper continue to decrypt as before. Password input elements are cleared immediately after reading their values, and the application does not log passwords or Mate content. This does not protect against a person with control of the browser, DevTools, injected extensions, or a compromised device; browser JavaScript cannot guarantee that runtime memory is invisible to DevTools.

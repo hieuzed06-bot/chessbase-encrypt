@@ -1,11 +1,17 @@
 import { toPGN, fromPGN, MAX_SOURCE_BYTES, MAX_PGN_BYTES } from './codec.js';
 import { encryptBytes, decryptBytes, encryptRawBytes, decryptRawBytes } from './crypto-v3.js';
+import { packMatePayload, unpackMatePayload } from './mate-payload.js';
 
 // ── UI state ────────────────────────────────────────────
 let mode='protect', lastPGN='', selectedFile=null, selectedCipherFile=null;
 
 function setMode(m){
   mode=m;
+  document.getElementById('pass-enc').value='';
+  document.getElementById('pass-confirm').value='';
+  document.getElementById('pass-dec').value='';
+  if(m!=='protect')document.getElementById('mate-enc').value='';
+  if(m!=='unlock')clearSensitiveOutputs();
   document.getElementById('tab-protect').className='tab'+(m==='protect'?' active':'');
   document.getElementById('tab-unlock').className='tab'+(m==='unlock'?' active':'');
   document.getElementById('panel-protect').style.display=m==='protect'?'':'none';
@@ -30,8 +36,15 @@ function updateSrcInfo(){
 
 async function doEncrypt(){
   const src=document.getElementById('src').value;
-  const pw=document.getElementById('pass-enc').value;
-  const confirmPw=document.getElementById('pass-confirm').value;
+  const passwordInput=document.getElementById('pass-enc');
+  const confirmInput=document.getElementById('pass-confirm');
+  const pw=passwordInput.value;
+  const confirmPw=confirmInput.value;
+  const mateInput=document.getElementById('mate-enc');
+  const mate=mateInput.value;
+  passwordInput.value='';
+  confirmInput.value='';
+  mateInput.value='';
   showMsg('enc-err','','');
   if(pw!==confirmPw){showMsg('enc-err','Passwords do not match.','err');showToast('Passwords do not match.','error');return;}
   if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');showToast('Password must be at least 16 characters.','error');return;}
@@ -43,7 +56,8 @@ async function doEncrypt(){
     const sourceBytes=selectedFile?new Uint8Array(await selectedFile.arrayBuffer()):new TextEncoder().encode(src);
     const payload=selectedFile?packFilePayload(selectedFile,sourceBytes):sourceBytes;
     if(payload.length>MAX_SOURCE_BYTES)throw new Error('File or source exceeds the 1 MiB encrypted payload limit.');
-    const buf=await encryptRawBytes(payload,pw);
+    const encryptedPayload=packMatePayload(payload,mate);
+    const buf=await encryptRawBytes(encryptedPayload,pw);
     lastPGN=toPGN(buf);
     document.getElementById('pgn-out').value=lastPGN;
     document.getElementById('pgn-meta').textContent=buf.length+' moves · '+fmt(buf.length);
@@ -74,6 +88,7 @@ function downloadDecryptedText(){
 
 function clearEnc(){
   document.getElementById('src').value='';
+  document.getElementById('mate-enc').value='';
   document.getElementById('file-input').value='';selectedFile=null;
   document.getElementById('file-info').textContent='No file selected';
   document.getElementById('pass-enc').value='';
@@ -88,8 +103,11 @@ function clearEnc(){
 
 // ── Unlock ───────────────────────────────────────────────
 async function doDecrypt(){
+  clearSensitiveOutputs();
   let pgn=document.getElementById('pgn-in').value.trim();
-  const pw=document.getElementById('pass-dec').value;
+  const passwordInput=document.getElementById('pass-dec');
+  const pw=passwordInput.value;
+  passwordInput.value='';
   showMsg('dec-msg','','');
   if(!pw){showMsg('dec-msg','Password is required.','err');showToast('Enter your password to continue.','error');return;}
   if(!pgn&&!selectedCipherFile){showMsg('dec-msg','Choose a .ccx file or paste PGN to unlock.','err');showToast('Choose an encrypted file or paste PGN first.','error');return;}
@@ -103,7 +121,13 @@ async function doDecrypt(){
   setBusy('dec-btn',true,'');
   try{
     const buf=selectedCipherFile?new Uint8Array(await selectedCipherFile.arrayBuffer()):fromPGN(pgn);
-    const plain=await decryptRawBytes(buf,pw);
+    const decrypted=await decryptRawBytes(buf,pw);
+    const unpacked=unpackMatePayload(decrypted);
+    const plain=unpacked.payload;
+    const mateOutput=document.getElementById('mate-out');
+    const mateResult=document.getElementById('mate-result');
+    mateOutput.value=unpacked.mate;
+    mateResult.style.display=unpacked.mate?'block':'none';
     const file=parseFilePayload(plain);
     if(file){downloadBytes(file.bytes,file.name,file.type);document.getElementById('dec-result').style.display='none';showMsg('dec-msg','File decrypted. Download started: '+file.name,'ok');showToast('File decrypted successfully. Download started.');}
     else{const code=new TextDecoder('utf-8',{fatal:true}).decode(plain);document.getElementById('code-out').value=code;document.getElementById('dec-result').style.display='block';const lines=code.split('\n').length;document.getElementById('dec-meta').textContent=lines+' lines · '+code.length+' chars';showMsg('dec-msg','Decryption complete. Authentication verified.','ok');showToast('Decryption completed successfully.');}
@@ -122,6 +146,11 @@ function copyDecCode(){
 }
 
 function clearDecMsg(){showMsg('dec-msg','','');}
+
+function clearSensitiveOutputs(){
+  document.getElementById('mate-out').value='';
+  document.getElementById('mate-result').style.display='none';
+}
 
 
 const FILE_PREFIX=new Uint8Array([67,67,88,70]);
@@ -211,3 +240,10 @@ document.getElementById('pgn-in').addEventListener('input',()=>{selectedCipherFi
 document.getElementById('pgn-file').addEventListener('change',handleCipherFileSelection);
 document.getElementById('dec-btn').addEventListener('click',doDecrypt);
 document.getElementById('dec-copy-btn').addEventListener('click',copyDecCode);
+window.addEventListener('pagehide',()=>{
+  document.getElementById('pass-enc').value='';
+  document.getElementById('pass-confirm').value='';
+  document.getElementById('pass-dec').value='';
+  document.getElementById('mate-enc').value='';
+  clearSensitiveOutputs();
+});

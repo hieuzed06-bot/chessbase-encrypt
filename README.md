@@ -151,3 +151,10 @@ New encrypted byte streams begin with the `CCX3` magic marker, followed by a 16-
 - PGN input is limited to 8 MiB and accepts only the chess-cipher move format, PGN move numbers, headers, and result markers. SAN moves, comments, variations, and malformed tokens are rejected.
 - Run `npm test` locally; GitHub Actions runs the same codec test suite for pushes and pull requests.
 - The main app loads JavaScript from `app.js` under a `script-src 'self'` policy. Downloaded protected pages use a fresh per-page CSP nonce for their embedded decryptor.
+
+
+## Optional encrypted Mate field
+
+The Protect tab includes an optional **Mate** field for a second secret or private note. Its UTF-8 bytes are wrapped with the selected content before encryption, so the Mate value is protected by the same AES-GCM envelope and appears only after successful decryption. It is not the encryption password. Existing encrypted files without Mate remain readable. Mate content is limited to 4 KiB, and the combined encrypted payload remains limited to 1 MiB.
+
+The password inputs are cleared immediately after their values are read for an operation, and no password or Mate value is written to browser storage or application logs. Browser DevTools can still inspect page state while a page is running; a browser-only app cannot guarantee secrecy from someone controlling the browser or its debugging tools.
