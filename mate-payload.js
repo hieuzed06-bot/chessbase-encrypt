@@ -22,8 +22,9 @@ export function packMatePayload(payload, mate = '') {
 
 export function unpackMatePayload(bytes) {
   if (!(bytes instanceof Uint8Array)) throw new TypeError('Expected decrypted bytes.');
-  const hasMagic = bytes.length >= MAGIC.length + 4 && MAGIC.every((value, index) => bytes[index] === value);
+  const hasMagic = bytes.length >= MAGIC.length && MAGIC.every((value, index) => bytes[index] === value);
   if (!hasMagic) return { mate: '', payload: bytes };
+  if (bytes.length < MAGIC.length + 4) throw new Error('Invalid encrypted mate metadata.');
   const length = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).getUint32(MAGIC.length, false);
   if (length < 1 || length > MAX_MATE_BYTES || MAGIC.length + 4 + length > bytes.length) {
     throw new Error('Invalid encrypted mate metadata.');
