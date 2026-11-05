@@ -84,6 +84,7 @@ function downloadDecryptedText(){
 
 function clearEnc(){
   document.getElementById('src').value='';
+  document.getElementById('mate-enc').value='';
   document.getElementById('file-input').value='';selectedFile=null;
   document.getElementById('file-info').textContent='No file selected';
   document.getElementById('pass-enc').value='';
@@ -98,6 +99,7 @@ function clearEnc(){
 
 // ── Unlock ───────────────────────────────────────────────
 async function doDecrypt(){
+  clearSensitiveOutputs();
   let pgn=document.getElementById('pgn-in').value.trim();
   const passwordInput=document.getElementById('pass-dec');
   const pw=passwordInput.value;
