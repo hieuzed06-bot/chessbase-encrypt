@@ -240,5 +240,6 @@ window.addEventListener('pagehide',()=>{
   document.getElementById('pass-enc').value='';
   document.getElementById('pass-confirm').value='';
   document.getElementById('pass-dec').value='';
+  document.getElementById('mate-enc').value='';
   clearSensitiveOutputs();
 });
