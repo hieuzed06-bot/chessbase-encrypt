@@ -103,13 +103,18 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <span class="line-info" id="src-info">0 lines · 0 B</span>
 
     <div class="pass-row">
+      <label class="field-label" for="mate-enc" data-i18n="mateLabel">Mate — encrypted secret</label>
+      <textarea id="mate-enc" rows="2" data-i18n-placeholder="matePlaceholder" placeholder="Optional secret note or another password..."></textarea>
+      <div class="help" data-i18n="mateHelp">This content is encrypted together with your file or text. It is not the encryption password.</div>
+    </div>
+    <div class="pass-row">
       <label class="field-label" for="pass-enc" data-i18n="password">Password</label>
-      <input class="password-input" type="password" id="pass-enc" autocomplete="new-password" data-i18n-placeholder="passwordPlaceholder" placeholder="Enter a strong password">
+      <input class="password-input" type="password" id="pass-enc" autocomplete="off" data-i18n-placeholder="passwordPlaceholder" placeholder="Enter a strong password">
       <div class="help" data-i18n="passwordHelp">Use at least 16 characters. A long passphrase is recommended.</div>
     </div>
     <div class="pass-row">
       <label class="field-label" for="pass-confirm" data-i18n="confirmPassword">Confirm password</label>
-      <input class="password-input" type="password" id="pass-confirm" autocomplete="new-password" data-i18n-placeholder="confirmPlaceholder" placeholder="Re-enter your password">
+      <input class="password-input" type="password" id="pass-confirm" autocomplete="off" data-i18n-placeholder="confirmPlaceholder" placeholder="Re-enter your password">
     </div>
     <div class="action-row"><button class="btn-primary" id="enc-btn" type="button"><span id="enc-label" data-i18n="encrypt">♜ Encrypt</span></button></div>
     <div class="busy-progress" id="enc-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="encrypting">Encrypting securely…</span></div>
@@ -145,7 +150,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <textarea id="pgn-in" rows="8" class="code" data-i18n-placeholder="pgnPlaceholder" placeholder="Paste chess notation here..."></textarea>
     <div class="pass-row">
       <label class="field-label" for="pass-dec" data-i18n="password">Password</label>
-      <input class="password-input" type="password" id="pass-dec" autocomplete="current-password" data-i18n-placeholder="decryptPassword" placeholder="Enter decryption password">
+      <input class="password-input" type="password" id="pass-dec" autocomplete="off" data-i18n-placeholder="decryptPassword" placeholder="Enter decryption password">
     </div>
     <div class="action-row"><button class="btn-primary" id="dec-btn" type="button"><span id="dec-label" data-i18n="decrypt">♙ Decrypt</span></button></div>
     <div class="busy-progress" id="dec-progress" aria-live="polite"><progress></progress><span class="busy-label" data-i18n="decrypting">Decrypting and verifying…</span></div>
@@ -153,6 +158,10 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
       <div class="out-hdr"><label class="field-label" for="code-out" data-i18n="decryptedCode">Decrypted code</label><span id="dec-meta" class="help"></span><button class="btn-sm" id="dec-copy-btn" type="button"><span id="dec-copy" data-i18n="copy">Copy</span></button></div>
       <textarea id="code-out" rows="12" readonly class="plain"></textarea>
       <div class="action-row"><button class="btn-secondary" id="dec-download-txt-btn" type="button" data-i18n="downloadTxt">Download .txt</button></div>
+    </div>
+    <div id="mate-result" style="display:none">
+      <div class="out-hdr"><label class="field-label" for="mate-out" data-i18n="mateDecrypted">Mate — decrypted secret</label></div>
+      <textarea id="mate-out" rows="3" readonly></textarea>
     </div>
     <div class="msg" id="dec-msg"></div>
   </section>
