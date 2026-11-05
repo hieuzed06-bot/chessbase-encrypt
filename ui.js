@@ -18,7 +18,7 @@ const translations = {
 };
 const messages = {
   "Passwords do not match.":"Mật khẩu xác nhận không khớp.",
-  "Encryption complete. Download the PGN as a .txt file or copy it.":"Mã hoá hoàn tất. Hãy tải PGN dưới dạng tệp .txt hoặc sao chép nội dung.",
+  "Encryption complete. Download the PGN as a .txt file or copy it.":"Encryption complete. Download the PGN as a .txt file or copy it.",
   "Decryption complete. Authentication verified.":"Giải mã hoàn tất. Xác thực thành công.",
   "File is too large (8 MiB maximum)":"Tệp quá lớn (tối đa 8 MiB).",
   "Could not read encrypted data from this HTML file.":"Không thể đọc dữ liệu đã mã hoá từ tệp HTML này.",
