@@ -40,6 +40,8 @@ button{color:inherit}
 .file-picker:hover{border-color:var(--accent);background:rgba(198,167,106,.2)}
 textarea{display:block;width:100%;min-height:148px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--field);color:var(--text);resize:vertical;outline:none;line-height:1.65;font-size:13px}
 textarea.code,textarea.plain{font-family:var(--mono);font-size:12px}
+textarea.mate-input{min-height:76px}
+textarea.mate-output{min-height:88px}
 textarea:focus,.password-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(198,167,106,.13)}
 textarea::placeholder,.password-input::placeholder{color:var(--muted);opacity:.7}
 .line-info{display:block;margin-top:6px;color:var(--muted);font:11px var(--mono);text-align:right}
@@ -104,7 +106,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
 
     <div class="pass-row">
       <label class="field-label" for="mate-enc" data-i18n="mateLabel">Mate — encrypted secret</label>
-      <textarea id="mate-enc" rows="2" data-i18n-placeholder="matePlaceholder" placeholder="Optional secret note or another password..."></textarea>
+      <textarea id="mate-enc" class="mate-input" rows="2" data-i18n-placeholder="matePlaceholder" placeholder="Optional secret note or another password..."></textarea>
       <div class="help" data-i18n="mateHelp">This content is encrypted together with your file or text. It is not the encryption password.</div>
     </div>
     <div class="pass-row">
@@ -161,7 +163,7 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     </div>
     <div id="mate-result" style="display:none">
       <div class="out-hdr"><label class="field-label" for="mate-out" data-i18n="mateDecrypted">Mate — decrypted secret</label></div>
-      <textarea id="mate-out" rows="3" readonly></textarea>
+      <textarea id="mate-out" class="mate-output" rows="3" readonly></textarea>
     </div>
     <div class="msg" id="dec-msg"></div>
   </section>
