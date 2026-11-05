@@ -38,8 +38,11 @@ async function doEncrypt(){
   const confirmInput=document.getElementById('pass-confirm');
   const pw=passwordInput.value;
   const confirmPw=confirmInput.value;
+  const mateInput=document.getElementById('mate-enc');
+  const mate=mateInput.value;
   passwordInput.value='';
   confirmInput.value='';
+  mateInput.value='';
   showMsg('enc-err','','');
   if(pw!==confirmPw){showMsg('enc-err','Passwords do not match.','err');showToast('Passwords do not match.','error');return;}
   if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');showToast('Password must be at least 16 characters.','error');return;}
@@ -51,7 +54,6 @@ async function doEncrypt(){
     const sourceBytes=selectedFile?new Uint8Array(await selectedFile.arrayBuffer()):new TextEncoder().encode(src);
     const payload=selectedFile?packFilePayload(selectedFile,sourceBytes):sourceBytes;
     if(payload.length>MAX_SOURCE_BYTES)throw new Error('File or source exceeds the 1 MiB encrypted payload limit.');
-    const mate=document.getElementById('mate-enc').value;
     const encryptedPayload=packMatePayload(payload,mate);
     const buf=await encryptRawBytes(encryptedPayload,pw);
     lastPGN=toPGN(buf);
