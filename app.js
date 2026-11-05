@@ -10,6 +10,8 @@ function setMode(m){
   document.getElementById('pass-enc').value='';
   document.getElementById('pass-confirm').value='';
   document.getElementById('pass-dec').value='';
+  if(m!=='protect')document.getElementById('mate-enc').value='';
+  if(m!=='unlock')clearSensitiveOutputs();
   document.getElementById('tab-protect').className='tab'+(m==='protect'?' active':'');
   document.getElementById('tab-unlock').className='tab'+(m==='unlock'?' active':'');
   document.getElementById('panel-protect').style.display=m==='protect'?'':'none';
