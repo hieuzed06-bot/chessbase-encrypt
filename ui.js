@@ -113,4 +113,44 @@ function setupDynamicTranslations(){
   });
   for(const id of ["toast-text","enc-msg","enc-err","dec-msg","file-info","pgn-file-info"])observer.observe($(id),{childList:true,characterData:true,subtree:true});
 }
-setupTheme();setupLanguage();applyLanguage();setupDropzones();setupProgress();setupDynamicTranslations();
+function setupStrengthMeter() {
+  const input = $('pass-enc');
+  const fill  = $('strength-fill');
+  const label = $('strength-label');
+  if (!input || !fill || !label) return;
+
+  // Estimate password entropy in bits (rough heuristic, not cryptographic).
+  function entropyBits(pw) {
+    if (!pw) return 0;
+    const len = Array.from(pw).length;
+    let pool = 0;
+    if (/[a-z]/.test(pw)) pool += 26;
+    if (/[A-Z]/.test(pw)) pool += 26;
+    if (/[0-9]/.test(pw)) pool += 10;
+    if (/[^a-zA-Z0-9]/.test(pw)) pool += 32;
+    // bonus for long passphrases (spaces = dictionary words)
+    const words = pw.trim().split(/\s+/).length;
+    if (words >= 4) pool += words * 8;
+    return len * Math.log2(pool || 1);
+  }
+
+  const levels = [
+    { max: 28,  pct: 20,  color: '#e55',  text: { en: 'Very weak', vi: 'Rất yếu' }  },
+    { max: 45,  pct: 42,  color: '#e96',  text: { en: 'Weak',      vi: 'Yếu'     }  },
+    { max: 65,  pct: 65,  color: '#db5',  text: { en: 'Fair',      vi: 'Trung bình'} },
+    { max: 90,  pct: 83,  color: '#6c6',  text: { en: 'Strong',    vi: 'Mạnh'    }  },
+    { max: Infinity, pct: 100, color: '#4a9', text: { en: 'Very strong', vi: 'Rất mạnh' } },
+  ];
+
+  input.addEventListener('input', () => {
+    const pw = input.value;
+    if (!pw) { fill.style.width = '0'; label.textContent = ''; return; }
+    const bits = entropyBits(pw);
+    const lvl  = levels.find(l => bits < l.max);
+    fill.style.width      = lvl.pct + '%';
+    fill.style.background = lvl.color;
+    label.style.color     = lvl.color;
+    label.textContent     = lvl.text[language] || lvl.text.en;
+  });
+}
+setupTheme();setupLanguage();applyLanguage();setupDropzones();setupProgress();setupDynamicTranslations();setupStrengthMeter();

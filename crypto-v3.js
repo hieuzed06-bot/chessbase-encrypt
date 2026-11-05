@@ -1,5 +1,8 @@
 // CCX v3 cryptographic envelope.
 // Web Crypto is used throughout; chess notation remains an encoding layer only.
+export { validateEncryptionPassword } from './password/validate.js';
+import { validateEncryptionPassword } from './password/validate.js';
+
 const TE = new TextEncoder();
 const TD = new TextDecoder('utf-8', { fatal: true });
 const MAGIC = TE.encode('CCX3');
@@ -7,22 +10,6 @@ const ITERATIONS = 1_000_000;
 const AAD = TE.encode('CodeLocker|CCX|3|PBKDF2-SHA256|1000000|AES-256-GCM|MOVE-CODEC-1');
 const MAX_SOURCE_BYTES = 1024 * 1024;
 const MAX_PADDED_BYTES = 2 * 1024 * 1024;
-const MIN_PASSWORD_CODE_POINTS = 16;
-const MAX_PASSWORD_BYTES = 1024;
-
-// Enforce a passphrase-length policy only when creating new ciphertext.
-// Decryption deliberately remains permissive for older files.
-export function validateEncryptionPassword(password) {
-  if (typeof password !== 'string') return 'Password is required.';
-  if (Array.from(password).length < MIN_PASSWORD_CODE_POINTS) {
-    return 'Use a password or passphrase of at least 16 characters.';
-  }
-  if (TE.encode(password).length > MAX_PASSWORD_BYTES) {
-    return 'Password must not exceed 1,024 UTF-8 bytes.';
-  }
-  if (!password.trim()) return 'Password cannot contain only whitespace.';
-  return null;
-}
 
 function randomBytes(length) {
   const out = new Uint8Array(length);
@@ -105,23 +92,26 @@ async function decryptV3(buffer, password) {
 
 async function decryptLegacy(buffer, password) {
   if (buffer.length < 45) throw new Error('Data too short — corrupted or invalid PGN.');
-  // Always perform both compatibility attempts. Returning after the first success
-  // would expose which legacy work factor matched through a coarse timing signal.
-  let recovered = null;
-  for (const iterations of [600000, 100000]) {
-    try {
-      const base = await crypto.subtle.importKey('raw', TE.encode(password), 'PBKDF2', false, ['deriveKey']);
-      const key = await crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: buffer.subarray(0, 16), iterations, hash: 'SHA-256' },
-        base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
-      );
-      const plain = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: buffer.subarray(16, 28) }, key, buffer.subarray(28)
-      );
-      if (recovered === null) recovered = new Uint8Array(plain);
-    } catch {}
+  // Both legacy work-factor attempts run in parallel via Promise.allSettled so
+  // neither attempt reveals which work factor matched through a timing signal,
+  // while also being faster than sequential attempts.
+  const salt = buffer.subarray(0, 16);
+  const iv   = buffer.subarray(16, 28);
+  const ct   = buffer.subarray(28);
+  const rawKey = TE.encode(password);
+
+  async function attempt(iterations) {
+    const base = await crypto.subtle.importKey('raw', rawKey, 'PBKDF2', false, ['deriveKey']);
+    const key  = await crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt, iterations, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+    );
+    return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ct));
   }
-  if (recovered !== null) return recovered;
+
+  const [r600k, r100k] = await Promise.allSettled([attempt(600000), attempt(100000)]);
+  if (r600k.status === 'fulfilled') return r600k.value;
+  if (r100k.status === 'fulfilled') return r100k.value;
   throw new Error('Decryption failed — wrong password or data was tampered with.');
 }
 

@@ -46,6 +46,9 @@ textarea:focus,.password-input:focus{border-color:var(--accent);box-shadow:0 0 0
 textarea::placeholder,.password-input::placeholder{color:var(--muted);opacity:.7}
 .line-info{display:block;margin-top:6px;color:var(--muted);font:11px var(--mono);text-align:right}
 .pass-row{margin:19px 0}.password-input{width:100%;min-height:44px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--text);outline:none;font-size:13px}
+.strength-bar{height:4px;border-radius:2px;background:var(--line);margin-top:7px;overflow:hidden;transition:opacity .2s}
+.strength-fill{height:100%;width:0;border-radius:2px;transition:width .3s,background .3s}
+.strength-label{font-size:11px;margin-top:4px;min-height:14px;color:var(--muted)}
 .action-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:17px}
 .btn-primary,.btn-secondary,.btn-sm{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:43px;padding:10px 15px;border-radius:10px;font-size:12px;font-weight:760;cursor:pointer;transition:transform .18s,filter .18s,border-color .18s}
 .btn-primary{width:100%;min-height:48px;border:1px solid rgba(198,167,106,.6);background:linear-gradient(120deg,#b18d50,#8d754b);color:#fffdf7}
@@ -112,6 +115,10 @@ button:disabled{opacity:.58;cursor:not-allowed;transform:none!important}
     <div class="pass-row">
       <label class="field-label" for="pass-enc" data-i18n="password">Password</label>
       <input class="password-input" type="password" id="pass-enc" autocomplete="off" data-i18n-placeholder="passwordPlaceholder" placeholder="Enter a strong password">
+      <div class="strength-bar" id="strength-bar" aria-hidden="true">
+        <div class="strength-fill" id="strength-fill"></div>
+      </div>
+      <div class="strength-label" id="strength-label"></div>
       <div class="help" data-i18n="passwordHelp">Use at least 16 characters. A long passphrase is recommended.</div>
     </div>
     <div class="pass-row">

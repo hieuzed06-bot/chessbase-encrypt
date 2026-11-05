@@ -1,6 +1,7 @@
 import { toPGN, fromPGN, MAX_SOURCE_BYTES, MAX_PGN_BYTES } from './codec.js';
 import { encryptBytes, decryptBytes, encryptRawBytes, decryptRawBytes } from './crypto-v3.js';
 import { packMatePayload, unpackMatePayload } from './mate-payload.js';
+import { validateEncryptionPassword } from './password/validate.js';
 
 // ── UI state ────────────────────────────────────────────
 let mode='protect', lastPGN='', selectedFile=null, selectedCipherFile=null;
@@ -47,9 +48,8 @@ async function doEncrypt(){
   mateInput.value='';
   showMsg('enc-err','','');
   if(pw!==confirmPw){showMsg('enc-err','Passwords do not match.','err');showToast('Passwords do not match.','error');return;}
-  if(Array.from(pw).length<16){showMsg('enc-err','Use a password or passphrase of at least 16 characters.','err');showToast('Password must be at least 16 characters.','error');return;}
-  if(new TextEncoder().encode(pw).length>1024){showMsg('enc-err','Password must not exceed 1,024 UTF-8 bytes.','err');showToast('Password is too long.','error');return;}
-  if(!pw.trim()){showMsg('enc-err','Password cannot contain only whitespace.','err');showToast('Password cannot contain only whitespace.','error');return;}
+  const pwError=validateEncryptionPassword(pw);
+  if(pwError){showMsg('enc-err',pwError,'err');showToast(pwError,'error');return;}
   if(!selectedFile&&!src.trim()){showMsg('enc-err','Choose a file or enter source text.','err');showToast('Choose a file or enter source text first.','error');return;}
   setBusy('enc-btn',true,'');
   try{
